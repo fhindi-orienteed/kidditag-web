@@ -21,6 +21,8 @@ export default function LoginPage() {
   const [is2FA, setIs2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState("");
 
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg("");
@@ -29,7 +31,7 @@ export default function LoginPage() {
     try {
       if (is2FA) {
         // Verify 2FA code
-        const response = await fetch("http://localhost:3000/api/auth/2fa/verify-login", {
+        const response = await fetch(`${API_BASE_URL}/auth/2fa/verify-login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ tempToken, code: twoFactorCode }),
@@ -50,7 +52,7 @@ export default function LoginPage() {
       }
 
       // Standard Login
-      const response = await fetch("http://localhost:3000/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -87,7 +89,7 @@ export default function LoginPage() {
     setErrorMsg("");
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/api/auth/google", {
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
@@ -122,7 +124,7 @@ export default function LoginPage() {
     script.async = true;
     script.onload = () => {
       (window as any).google?.accounts.id.initialize({
-        client_id: "396330148372-h138lsfqg7uefkum922vl4nf1ikghpc7.apps.googleusercontent.com",
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
         callback: (response: any) => {
           handleGoogleLogin(response.credential);
         },
