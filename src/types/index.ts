@@ -52,10 +52,13 @@ export interface ChildProfile {
 }
 
 export interface User {
-  id?: string;
+  id?: number | string;
   userName: string;
   email?: string;
+  name?: string;
   role?: string;
+  accountId?: number;
+  account_id?: number;
 }
 
 export interface AuthState {

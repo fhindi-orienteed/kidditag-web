@@ -18,10 +18,10 @@ import TagTable from './TagTable';
 import TagQrModal from './TagQrModal';
 import TagScanSimulatorModal from './TagScanSimulatorModal';
 import { type TagWithChild } from './tagUtils';
-import type { ApiTag } from '../../../types';
+import { useAuth } from '../../../context/AuthContext';
+import { useTags } from '../../../hooks/useTags';
+import { useChildren } from '../../../hooks/useChildren';
 import './tags.css';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 type LayoutMode = 'grid' | 'table';
 type SortOption = 'recent' | 'scans-desc' | 'id-asc' | 'type-asc';
@@ -36,67 +36,28 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
   const childrenData = ctx?.childrenData || initialChildrenData;
   const onOpenActivation = propOpenActivation || ctx?.onOpenActivation;
 
-  // Real API State
-  const [apiTags, setApiTags] = useState<ApiTag[]>([]);
-  const [children, setChildren] = useState<{ id: number; name: string }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // Custom Hooks
+  const { isAuthenticated } = useAuth();
+  const { tags: apiTags, loading, error, createTag, updateTag, deleteTag } = useTags();
+  const { children, createChild } = useChildren();
+
+  // Local Form State
   const [showAddForm, setShowAddForm] = useState(false);
   const [tagCode, setTagCode] = useState('');
   const [childId, setChildId] = useState('');
   const [newChildName, setNewChildName] = useState('');
   const [adding, setAdding] = useState(false);
 
-  const token = localStorage.getItem('token');
-
-  // Fetch children from API
-  const fetchChildren = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/children`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.data || []);
-      if (res.ok) {
-        setChildren(list);
-        if (list.length > 0) {
-          setChildId(String(list[0].id));
-        } else {
-          setChildId('__new__');
-        }
-      }
-    } catch {
-      console.error('Failed to load children');
-    }
-  };
-
-  // Fetch tags from API
-  const fetchTags = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE_URL}/tags`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : (data.data || []);
-      if (res.ok) {
-        setApiTags(list);
-      } else {
-        setError(data.message || 'Failed to load tags');
-      }
-    } catch {
-      setError('Failed to connect to server');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Default selected child
   useEffect(() => {
-    fetchTags();
-    fetchChildren();
-  }, []);
+    if (children.length > 0 && !childId) {
+      setChildId(String(children[0].id));
+    } else if (children.length === 0 && !childId) {
+      setChildId('__new__');
+    }
+  }, [children, childId]);
 
-  // Add tag handler
+  // Add tag handler using custom hook
   const handleAddTag = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tagCode) return;
@@ -107,25 +68,11 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
 
       // If user chose to create a new child or has no children
       if ((targetChildId === '__new__' || !targetChildId) && newChildName.trim()) {
-        const childRes = await fetch(`${API_BASE_URL}/children`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            name: newChildName.trim(),
-            dateOfBirth: new Date('2020-01-01').toISOString()
-          })
-        });
-        const childData = await childRes.json();
-        const createdId = childData?.data?.id || childData?.id;
-        if (childRes.ok && createdId) {
-          targetChildId = String(createdId);
-          await fetchChildren();
+        const createdChild = await createChild(newChildName.trim());
+        if (createdChild?.id) {
+          targetChildId = String(createdChild.id);
         } else {
-          const errMsg = childData.errors ? childData.errors.map((err: any) => err.message).join(', ') : childData.message;
-          alert(errMsg || 'Failed to create child');
+          alert('Failed to create child');
           setAdding(false);
           return;
         }
@@ -137,68 +84,33 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/tags`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ tagCode, childId: Number(targetChildId) })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setShowAddForm(false);
-        setTagCode('');
-        setNewChildName('');
-        fetchTags();
-      } else {
-        alert(data.message || 'Failed to add tag');
-      }
-    } catch {
-      alert('Failed to connect to server');
+      await createTag(tagCode, Number(targetChildId));
+      setShowAddForm(false);
+      setTagCode('');
+      setNewChildName('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to add tag');
     } finally {
       setAdding(false);
     }
   };
 
-  // Delete tag handler
+  // Delete tag handler using custom hook
   const handleDelete = async (id: number | string) => {
     if (!confirm('Are you sure you want to delete this tag?')) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/tags/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        setApiTags(prev => prev.filter(t => t.id !== Number(id) && t.tagCode !== String(id)));
-      } else {
-        const data = await res.json();
-        alert(data.message || 'Failed to delete tag');
-      }
-    } catch {
-      alert('Failed to connect to server');
+      await deleteTag(id);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete tag');
     }
   };
 
-  // Toggle active tag handler
+  // Toggle active tag handler using custom hook
   const handleToggleActive = async (id: number | string, isActive: boolean) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/tags/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ isActive })
-      });
-      if (res.ok) {
-        setApiTags(prev => prev.map(t => (t.id === Number(id) || t.tagCode === String(id)) ? { ...t, isActive } : t));
-      } else {
-        const data = await res.json();
-        alert(data.message || 'Failed to update tag');
-      }
-    } catch {
-      alert('Failed to connect to server');
+      await updateTag(id, { isActive });
+    } catch (err: any) {
+      alert(err.message || 'Failed to update tag');
     }
   };
 
@@ -233,7 +145,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
 
   // Compile all tags with child metadata (prefer real API tags when authenticated, fallback to mock only if guest)
   const allTagsWithChild: (TagWithChild & { apiId?: number })[] = useMemo(() => {
-    if (token) {
+    if (isAuthenticated) {
       return apiTags.map((tag) => ({
         id: tag.tagCode,
         apiId: tag.id,
@@ -259,7 +171,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
       });
     });
     return list;
-  }, [apiTags, childrenData, token]);
+  }, [apiTags, childrenData, isAuthenticated]);
 
   // Filtered & Sorted Tags
   const filteredTags = useMemo(() => {

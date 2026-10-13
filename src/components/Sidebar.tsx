@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 interface Props {
   onOpenActivation?: () => void;
@@ -23,28 +24,7 @@ export default function Sidebar({ onOpenActivation }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
-  // Read current logged-in user from localStorage
-  const storedUser = localStorage.getItem('user');
-  let displayName = 'Sarah Sinclair';
-  let initials = 'SS';
-  if (storedUser) {
-    try {
-      const parsed = JSON.parse(storedUser);
-      const name = parsed.userName || parsed.name || parsed.email;
-      if (name) {
-        displayName = name.replace(/_/g, ' ');
-        const parts = displayName.trim().split(/\s+/);
-        if (parts.length >= 2) {
-          initials = (parts[0][0] + parts[1][0]).toUpperCase();
-        } else if (parts[0]) {
-          initials = parts[0].substring(0, 2).toUpperCase();
-        }
-      }
-    } catch {
-      // fallback to default
-    }
-  }
+  const { displayName, initials, logout } = useAuth();
 
   const navItems = [
     { id: 'overview', path: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -148,8 +128,7 @@ export default function Sidebar({ onOpenActivation }: Props) {
           <button 
             className="dash-footer-link danger" 
             onClick={() => {
-              localStorage.removeItem('token');
-              localStorage.removeItem('user');
+              logout();
               navigate('/auth/login');
             }}
           >

@@ -10,6 +10,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from "lucide-react";
+import api from "../../../services/api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -39,33 +40,20 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
-
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userName: name,
-          password: password,
-        }),
+      await api.post("/auth/register", {
+        userName: name,
+        password: password,
       });
 
-      const data = await response.json();
       setIsLoading(false);
-
-      if (!response.ok) {
-        setErrorMsg(data.message || "Registration failed. Please try again.");
-        return;
-      }
-
       setSuccessMsg("Account created successfully! Redirecting to login...");
       setTimeout(() => {
         navigate("/auth/login");
       }, 1500);
-    } catch {
+    } catch (err: any) {
       setIsLoading(false);
-      setErrorMsg("Failed to connect to backend server. Make sure kidditag-api is running.");
+      setErrorMsg(err.message || "Registration failed. Please try again.");
     }
   };
 
