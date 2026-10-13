@@ -21,10 +21,17 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor for unified error message handling
+// Response interceptor for unified error message handling and auto-cleanup of expired tokens
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (
+      error.response?.status === 401 ||
+      (error.response?.status === 403 && error.response?.data?.message?.toLowerCase().includes('token'))
+    ) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
     const message = error.response?.data?.message || error.message || 'Network request failed';
     return Promise.reject(new Error(message));
   }
