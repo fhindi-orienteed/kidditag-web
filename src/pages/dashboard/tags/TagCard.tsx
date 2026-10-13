@@ -1,107 +1,233 @@
-import { QrCode, Trash2, ToggleLeft, ToggleRight } from 'lucide-react';
-import type { ApiTag } from '../../../types';
+import { useState } from 'react';
+import { 
+  QrCode, 
+  Radio, 
+  MapPin, 
+  Clock, 
+  ExternalLink, 
+  Copy, 
+  Check, 
+  Droplets, 
+  Zap, 
+  Search,
+  Trash2,
+  ToggleLeft,
+  ToggleRight
+} from 'lucide-react';
+import type { Tag } from '../../../types';
+import { getTagColorTheme, getTagFormFactorMeta } from './tagUtils';
 
 interface TagsCardProps {
-  tag: ApiTag;
-  onDelete: (id: number) => void;
-  onToggleActive: (id: number, isActive: boolean) => void;
+  tag: Tag & { apiId?: number };
+  childName?: string;
+  childAvatar?: string;
+  onSimulateScan?: (tag: Tag) => void;
+  onInspectQr?: (tag: Tag) => void;
+  onDelete?: (id: number | string) => void;
+  onToggleActive?: (id: number | string, isActive: boolean) => void;
 }
 
-export default function TagsCard({ tag, onDelete, onToggleActive }: TagsCardProps) {
-  const childName = tag.child ? tag.child.name : 'Not assigned';
+export default function TagsCard({ 
+  tag, 
+  childName = 'Child', 
+  childAvatar = '👧',
+  onSimulateScan,
+  onInspectQr,
+  onDelete,
+  onToggleActive
+}: TagsCardProps) {
+  const [copied, setCopied] = useState(false);
+
+  const colorTheme = getTagColorTheme(tag.color || 'purple');
+  const meta = getTagFormFactorMeta(tag.type || 'wristband');
+
+  const handleCopyCode = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard?.writeText(tag.id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const isRecentScan = (tag.lastScan || '').includes('min') || (tag.lastScan || '').includes('hour') || (tag.lastScan || '').includes('Today');
+  const isActive = tag.status === 'Active';
 
   return (
-    <div style={{
-      background: '#ffffff',
-      border: '1px solid #e2e8f0',
-      borderRadius: 16,
-      padding: 20,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      gap: 16,
-      position: 'relative'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{
-          width: 52,
-          height: 52,
-          borderRadius: 12,
-          background: '#f5f3ff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <QrCode size={30} style={{ color: 'var(--brand-purple, #6366f1)' }} />
+    <div 
+      className="dash-tag-card-full upgraded-tag-card"
+      style={{
+        '--tag-accent': colorTheme.accent,
+        '--tag-glow': colorTheme.glow,
+        '--tag-border-light': colorTheme.borderLight,
+      } as React.CSSProperties}
+    >
+      {/* Top Accent Strip */}
+      <div 
+        className="tag-card-accent-strip" 
+        style={{ background: colorTheme.gradient }} 
+      />
+
+      {/* Card Header Row */}
+      <div className="dash-tag-card-top upgraded-card-header">
+        {/* Interactive QR Mini Preview */}
+        <div 
+          className="upgraded-qr-box"
+          onClick={() => onInspectQr?.(tag)}
+          title="Click to inspect high-resolution QR & NFC code"
+        >
+          <div className="qr-mini-inner">
+            <QrCode size={34} style={{ color: colorTheme.accent }} />
+          </div>
+          <div className="qr-hover-peek">
+            <Search size={14} />
+            <span>QR</span>
+          </div>
         </div>
-        <span style={{
-          padding: '4px 12px',
-          borderRadius: 20,
-          fontSize: 12,
-          fontWeight: 600,
-          background: tag.isActive ? '#ecfdf5' : '#f1f5f9',
-          color: tag.isActive ? '#059669' : '#64748b'
-        }}>
-          {tag.isActive ? 'Active' : 'Inactive'}
+
+        {/* Right Badges: Status + Child Assignment */}
+        <div className="tag-card-top-right">
+          <div className="tag-child-chip" title={`Assigned to ${childName}`}>
+            <span className="tag-child-avatar">{childAvatar}</span>
+            <span className="tag-child-name">{childName.split(' ')[0]}</span>
+          </div>
+
+          <div className={`tag-status-pill ${tag.status.toLowerCase()}`}>
+            <span className={`status-pulse-dot ${isActive ? 'active-pulse' : ''}`} />
+            <span>{tag.status}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Card Title & Hardware Spec */}
+      <div className="tag-card-title-section">
+        <div className="tag-type-row">
+          <h3 className="dash-tag-card-name tag-main-title">{tag.type || 'Smart Tag'}</h3>
+          <span className="tag-category-pill" style={{ background: colorTheme.bgLight, color: colorTheme.text, borderColor: colorTheme.borderLight }}>
+            {meta.category}
+          </span>
+        </div>
+
+        {/* Tag ID with 1-Click Copy */}
+        <div className="tag-id-code-row">
+          <span className="tag-code-prefix">ID:</span>
+          <code className="tag-code-chip">{tag.id}</code>
+          <button 
+            type="button"
+            className={`tag-code-copy-btn ${copied ? 'copied' : ''}`}
+            onClick={handleCopyCode}
+            title="Copy Tag Code"
+            aria-label={`Copy Tag Code ${tag.id}`}
+          >
+            {copied ? <Check size={13} className="green" /> : <Copy size={13} />}
+            <span className="copy-tooltip">{copied ? 'Copied!' : 'Copy'}</span>
+          </button>
+        </div>
+
+        {/* Color Swatch & Durability */}
+        <div className="tag-hardware-specs">
+          <span className="tag-color-swatch-badge">
+            <span className="color-swatch-dot" style={{ background: colorTheme.dotColor }} />
+            <span className="color-name">{tag.color || 'Standard'}</span>
+          </span>
+          <span className="tag-spec-dot">•</span>
+          <span className="tag-material-text">{meta.material}</span>
+        </div>
+      </div>
+
+      {/* Feature Pills */}
+      <div className="tag-feature-pills-row">
+        <span className="feature-pill" title="Passive contactless RF chip">
+          <Radio size={12} className="feature-pill-icon purple" />
+          <span>NFC Tap</span>
+        </span>
+        <span className="feature-pill" title="Instant optical finder scan">
+          <QrCode size={12} className="feature-pill-icon blue" />
+          <span>Micro QR</span>
+        </span>
+        <span className="feature-pill" title="100% Waterproof submersible">
+          <Droplets size={12} className="feature-pill-icon teal" />
+          <span>IP68 Proof</span>
+        </span>
+        <span className="feature-pill" title="Zero charging required">
+          <Zap size={12} className="feature-pill-icon amber" />
+          <span>Zero Battery</span>
         </span>
       </div>
 
-      <div>
-        <div style={{ fontSize: 13, color: '#64748b', marginBottom: 2 }}>Assigned Child</div>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: '#1e293b', marginBottom: 6 }}>{childName}</h3>
-        <div style={{ fontSize: 14, color: '#475569' }}>
-          Tag Code: <strong style={{ color: 'var(--brand-purple, #6366f1)', letterSpacing: 0.5 }}>{tag.tagCode}</strong>
+      {/* Live Telemetry & Activity Stats */}
+      <div className="dash-tag-card-stats upgraded-stats-box">
+        <div className="tag-stat-col">
+          <div className="stat-label-row">
+            <span className="stat-label">Total Scans</span>
+          </div>
+          <div className="stat-value-row">
+            <span className="stat-scans-number">{tag.scans || 0}</span>
+            <span className="stat-scans-unit">{(tag.scans || 0) === 1 ? 'scan' : 'scans'}</span>
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
-          Added on {new Date(tag.createdAt).toLocaleDateString()}
+
+        <div className="tag-stat-divider" />
+
+        <div className="tag-stat-col tag-stat-location-col">
+          <div className="stat-label-row">
+            <Clock size={11} className="stat-icon-muted" />
+            <span className="stat-label">Last Activity</span>
+          </div>
+          <div className={`stat-last-time ${isRecentScan ? 'recent-highlight' : ''}`}>
+            {tag.lastScan || 'Never scanned'}
+          </div>
+          <div className="stat-location-row" title={tag.location || 'Location ready'}>
+            <MapPin size={11} className="stat-pin-icon" />
+            <span className="stat-location-text">{tag.location || 'Location ready'}</span>
+          </div>
         </div>
       </div>
 
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingTop: 14,
-        borderTop: '1px solid #f1f5f9'
-      }}>
-        <button
-          onClick={() => onToggleActive(tag.id, !tag.isActive)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 500,
-            color: tag.isActive ? '#059669' : '#64748b'
-          }}
-          title={tag.isActive ? 'Deactivate tag' : 'Activate tag'}
+      {/* Card Action Buttons */}
+      <div className="tag-card-actions-grid">
+        <button 
+          type="button"
+          className="btn-primary tag-action-simulate-btn"
+          onClick={() => onSimulateScan?.(tag)}
+          title="Simulate what happens when a finder scans this tag"
         >
-          {tag.isActive ? <ToggleRight size={22} color="#059669" /> : <ToggleLeft size={22} color="#94a3b8" />}
-          <span>{tag.isActive ? 'Active' : 'Paused'}</span>
+          <ExternalLink size={14} />
+          <span>Simulate Scan</span>
         </button>
 
-        <button
-          onClick={() => onDelete(tag.id)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 500,
-            color: '#ef4444'
-          }}
-          title="Delete tag"
+        <button 
+          type="button"
+          className="btn-secondary tag-action-qr-btn"
+          onClick={() => onInspectQr?.(tag)}
+          title="View full-size QR code and NFC details"
         >
-          <Trash2 size={16} />
-          <span>Delete</span>
+          <QrCode size={14} />
+          <span>View QR</span>
         </button>
+
+        {onToggleActive && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onToggleActive(tag.apiId || tag.id, !isActive)}
+            title={isActive ? 'Deactivate tag' : 'Activate tag'}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px' }}
+          >
+            {isActive ? <ToggleRight size={18} color="#059669" /> : <ToggleLeft size={18} color="#94a3b8" />}
+            <span style={{ fontSize: 12 }}>{isActive ? 'Active' : 'Paused'}</span>
+          </button>
+        )}
+
+        {onDelete && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onDelete(tag.apiId || tag.id)}
+            title="Delete tag"
+            style={{ color: '#ef4444', borderColor: '#fecaca', padding: '0 10px' }}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
     </div>
   );
