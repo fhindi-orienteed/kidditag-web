@@ -71,7 +71,7 @@ export default function App() {
           />
           <Route
             path="tags"
-            element={<TagsPage onOpenActivation={handleOpenActivation} />}
+            element={<TagsPage />}
           />
           <Route
             path="children"

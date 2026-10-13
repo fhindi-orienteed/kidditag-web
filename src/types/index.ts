@@ -8,6 +8,21 @@ export interface Tag {
   location: string;
 }
 
+export interface ApiTag {
+  id: number;
+  tagCode: string;
+  isActive: boolean;
+  childId: number | null;
+  child: {
+    id: number;
+    name: string;
+    medicalInfo: string | null;
+    allergies: string | null;
+  } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface EmergencyContact {
   name: string;
   phone: string;
