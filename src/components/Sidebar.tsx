@@ -24,6 +24,28 @@ export default function Sidebar({ onOpenActivation }: Props) {
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
+  // Read current logged-in user from localStorage
+  const storedUser = localStorage.getItem('user');
+  let displayName = 'Sarah Sinclair';
+  let initials = 'SS';
+  if (storedUser) {
+    try {
+      const parsed = JSON.parse(storedUser);
+      const name = parsed.userName || parsed.name || parsed.email;
+      if (name) {
+        displayName = name.replace(/_/g, ' ');
+        const parts = displayName.trim().split(/\s+/);
+        if (parts.length >= 2) {
+          initials = (parts[0][0] + parts[1][0]).toUpperCase();
+        } else if (parts[0]) {
+          initials = parts[0].substring(0, 2).toUpperCase();
+        }
+      }
+    } catch {
+      // fallback to default
+    }
+  }
+
   const navItems = [
     { id: 'overview', path: '/dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'tags', path: '/dashboard/tags', label: 'Smart Tags', icon: Tag },
@@ -110,9 +132,9 @@ export default function Sidebar({ onOpenActivation }: Props) {
 
         {/* User Profile Snippet */}
         <div className="dash-user-card">
-          <div className="dash-user-avatar">SS</div>
+          <div className="dash-user-avatar">{initials}</div>
           <div className="dash-user-info">
-            <div className="dash-user-name">Sarah Sinclair</div>
+            <div className="dash-user-name">{displayName}</div>
             <div className="dash-user-plan">Family Care • Active</div>
           </div>
         </div>
@@ -123,7 +145,14 @@ export default function Sidebar({ onOpenActivation }: Props) {
             <ArrowLeft size={15} />
             <span>Back to Site</span>
           </button>
-          <button className="dash-footer-link danger" onClick={() => navigate('/auth/login')}>
+          <button 
+            className="dash-footer-link danger" 
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              navigate('/auth/login');
+            }}
+          >
             <LogOut size={15} />
             <span>Sign Out</span>
           </button>

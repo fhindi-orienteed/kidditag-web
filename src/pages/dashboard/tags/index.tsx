@@ -231,9 +231,9 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
   const [selectedInspectTag, setSelectedInspectTag] = useState<TagWithChild | null>(null);
   const [selectedSimulateTag, setSelectedSimulateTag] = useState<TagWithChild | null>(null);
 
-  // Compile all tags with child metadata (prefer real API tags, fallback to mock if none)
+  // Compile all tags with child metadata (prefer real API tags when authenticated, fallback to mock only if guest)
   const allTagsWithChild: (TagWithChild & { apiId?: number })[] = useMemo(() => {
-    if (apiTags.length > 0) {
+    if (token) {
       return apiTags.map((tag) => ({
         id: tag.tagCode,
         apiId: tag.id,
@@ -259,7 +259,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
       });
     });
     return list;
-  }, [apiTags, childrenData]);
+  }, [apiTags, childrenData, token]);
 
   // Filtered & Sorted Tags
   const filteredTags = useMemo(() => {
