@@ -9,9 +9,12 @@ import {
   ArrowRight,
   AlertCircle,
 } from "lucide-react";
+import { useAuth } from "../../../context/AuthContext";
+import api from "../../../services/api";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,8 +24,6 @@ export default function LoginPage() {
   const [is2FA, setIs2FA] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState("");
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg("");
@@ -31,43 +32,26 @@ export default function LoginPage() {
     try {
       if (is2FA) {
         // Verify 2FA code
-        const response = await fetch(`${API_BASE_URL}/auth/2fa/verify-login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tempToken, code: twoFactorCode }),
+        const res = await api.post("/auth/2fa/verify-login", {
+          tempToken,
+          code: twoFactorCode,
         });
 
-        const data = await response.json();
         setIsLoading(false);
-
-        if (!response.ok) {
-          setErrorMsg(data.message || "Invalid 2FA code.");
-          return;
-        }
-
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        const data = res.data;
+        login(data.token, data.user);
         navigate("/dashboard");
         return;
       }
 
       // Standard Login
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userName: email,
-          password: password,
-        }),
+      const res = await api.post("/auth/login", {
+        userName: email,
+        password: password,
       });
 
-      const data = await response.json();
+      const data = res.data;
       setIsLoading(false);
-
-      if (!response.ok) {
-        setErrorMsg(data.message || "Login failed. Please check your credentials.");
-        return;
-      }
 
       if (data.requires2FA) {
         setIs2FA(true);
@@ -76,12 +60,11 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      login(data.token, data.user);
       navigate("/dashboard");
-    } catch {
+    } catch (err: any) {
       setIsLoading(false);
-      setErrorMsg("Failed to connect to backend server. Make sure kidditag-api is running.");
+      setErrorMsg(err.message || "Login failed. Please check your credentials.");
     }
   };
 
@@ -89,19 +72,9 @@ export default function LoginPage() {
     setErrorMsg("");
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken }),
-      });
-
-      const data = await response.json();
+      const res = await api.post("/auth/google", { idToken });
+      const data = res.data;
       setIsLoading(false);
-
-      if (!response.ok) {
-        setErrorMsg(data.message || "Google login failed.");
-        return;
-      }
 
       if (data.requires2FA) {
         setIs2FA(true);
@@ -109,12 +82,11 @@ export default function LoginPage() {
         return;
       }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      login(data.token, data.user);
       navigate("/dashboard");
-    } catch {
+    } catch (err: any) {
       setIsLoading(false);
-      setErrorMsg("Failed to connect to backend server.");
+      setErrorMsg(err.message || "Google login failed.");
     }
   };
 

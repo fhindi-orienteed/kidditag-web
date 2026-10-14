@@ -9,17 +9,22 @@ import {
   Check, 
   Droplets, 
   Zap, 
-  Search
+  Search,
+  Trash2,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import type { Tag } from '../../../types';
 import { getTagColorTheme, getTagFormFactorMeta } from './tagUtils';
 
 interface TagsCardProps {
-  tag: Tag;
+  tag: Tag & { apiId?: number };
   childName?: string;
   childAvatar?: string;
   onSimulateScan?: (tag: Tag) => void;
   onInspectQr?: (tag: Tag) => void;
+  onDelete?: (id: number | string) => void;
+  onToggleActive?: (id: number | string, isActive: boolean) => void;
 }
 
 export default function TagsCard({ 
@@ -27,12 +32,14 @@ export default function TagsCard({
   childName = 'Child', 
   childAvatar = '👧',
   onSimulateScan,
-  onInspectQr
+  onInspectQr,
+  onDelete,
+  onToggleActive
 }: TagsCardProps) {
   const [copied, setCopied] = useState(false);
 
-  const colorTheme = getTagColorTheme(tag.color);
-  const meta = getTagFormFactorMeta(tag.type);
+  const colorTheme = getTagColorTheme(tag.color || 'purple');
+  const meta = getTagFormFactorMeta(tag.type || 'wristband');
 
   const handleCopyCode = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -41,7 +48,8 @@ export default function TagsCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const isRecentScan = tag.lastScan.includes('min') || tag.lastScan.includes('hour') || tag.lastScan.includes('Today');
+  const isRecentScan = (tag.lastScan || '').includes('min') || (tag.lastScan || '').includes('hour') || (tag.lastScan || '').includes('Today');
+  const isActive = tag.status === 'Active';
 
   return (
     <div 
@@ -83,7 +91,7 @@ export default function TagsCard({
           </div>
 
           <div className={`tag-status-pill ${tag.status.toLowerCase()}`}>
-            <span className={`status-pulse-dot ${tag.status === 'Active' ? 'active-pulse' : ''}`} />
+            <span className={`status-pulse-dot ${isActive ? 'active-pulse' : ''}`} />
             <span>{tag.status}</span>
           </div>
         </div>
@@ -92,7 +100,7 @@ export default function TagsCard({
       {/* Card Title & Hardware Spec */}
       <div className="tag-card-title-section">
         <div className="tag-type-row">
-          <h3 className="dash-tag-card-name tag-main-title">{tag.type}</h3>
+          <h3 className="dash-tag-card-name tag-main-title">{tag.type || 'Smart Tag'}</h3>
           <span className="tag-category-pill" style={{ background: colorTheme.bgLight, color: colorTheme.text, borderColor: colorTheme.borderLight }}>
             {meta.category}
           </span>
@@ -118,7 +126,7 @@ export default function TagsCard({
         <div className="tag-hardware-specs">
           <span className="tag-color-swatch-badge">
             <span className="color-swatch-dot" style={{ background: colorTheme.dotColor }} />
-            <span className="color-name">{tag.color}</span>
+            <span className="color-name">{tag.color || 'Standard'}</span>
           </span>
           <span className="tag-spec-dot">•</span>
           <span className="tag-material-text">{meta.material}</span>
@@ -152,8 +160,8 @@ export default function TagsCard({
             <span className="stat-label">Total Scans</span>
           </div>
           <div className="stat-value-row">
-            <span className="stat-scans-number">{tag.scans}</span>
-            <span className="stat-scans-unit">{tag.scans === 1 ? 'scan' : 'scans'}</span>
+            <span className="stat-scans-number">{tag.scans || 0}</span>
+            <span className="stat-scans-unit">{(tag.scans || 0) === 1 ? 'scan' : 'scans'}</span>
           </div>
         </div>
 
@@ -165,9 +173,9 @@ export default function TagsCard({
             <span className="stat-label">Last Activity</span>
           </div>
           <div className={`stat-last-time ${isRecentScan ? 'recent-highlight' : ''}`}>
-            {tag.lastScan}
+            {tag.lastScan || 'Never scanned'}
           </div>
-          <div className="stat-location-row" title={tag.location}>
+          <div className="stat-location-row" title={tag.location || 'Location ready'}>
             <MapPin size={11} className="stat-pin-icon" />
             <span className="stat-location-text">{tag.location || 'Location ready'}</span>
           </div>
@@ -195,6 +203,31 @@ export default function TagsCard({
           <QrCode size={14} />
           <span>View QR</span>
         </button>
+
+        {onToggleActive && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onToggleActive(tag.apiId || tag.id, !isActive)}
+            title={isActive ? 'Deactivate tag' : 'Activate tag'}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '0 10px' }}
+          >
+            {isActive ? <ToggleRight size={18} color="#059669" /> : <ToggleLeft size={18} color="#94a3b8" />}
+            <span style={{ fontSize: 12 }}>{isActive ? 'Active' : 'Paused'}</span>
+          </button>
+        )}
+
+        {onDelete && (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => onDelete(tag.apiId || tag.id)}
+            title="Delete tag"
+            style={{ color: '#ef4444', borderColor: '#fecaca', padding: '0 10px' }}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

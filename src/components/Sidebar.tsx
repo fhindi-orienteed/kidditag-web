@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 interface Props {
   onOpenActivation?: () => void;
@@ -23,6 +24,7 @@ export default function Sidebar({ onOpenActivation }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { displayName, initials, logout } = useAuth();
 
   const navItems = [
     { id: 'overview', path: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -110,9 +112,9 @@ export default function Sidebar({ onOpenActivation }: Props) {
 
         {/* User Profile Snippet */}
         <div className="dash-user-card">
-          <div className="dash-user-avatar">SS</div>
+          <div className="dash-user-avatar">{initials}</div>
           <div className="dash-user-info">
-            <div className="dash-user-name">Sarah Sinclair</div>
+            <div className="dash-user-name">{displayName}</div>
             <div className="dash-user-plan">Family Care • Active</div>
           </div>
         </div>
@@ -123,7 +125,13 @@ export default function Sidebar({ onOpenActivation }: Props) {
             <ArrowLeft size={15} />
             <span>Back to Site</span>
           </button>
-          <button className="dash-footer-link danger" onClick={() => navigate('/auth/login')}>
+          <button 
+            className="dash-footer-link danger" 
+            onClick={() => {
+              logout();
+              navigate('/auth/login');
+            }}
+          >
             <LogOut size={15} />
             <span>Sign Out</span>
           </button>

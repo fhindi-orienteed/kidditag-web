@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, 
   LayoutGrid, 
@@ -8,7 +8,8 @@ import {
   Tag as TagIcon, 
   ShieldCheck, 
   Activity, 
-  Zap
+  Zap,
+  Loader2
 } from 'lucide-react';
 import { useDashboardContext } from '../context';
 import { initialChildrenData } from '../mockData';
@@ -17,22 +18,103 @@ import TagTable from './TagTable';
 import TagQrModal from './TagQrModal';
 import TagScanSimulatorModal from './TagScanSimulatorModal';
 import { type TagWithChild } from './tagUtils';
+import { useAuth } from '../../../context/AuthContext';
+import { useTags } from '../../../hooks/useTags';
+import { useChildren } from '../../../hooks/useChildren';
 import './tags.css';
+
+type LayoutMode = 'grid' | 'table';
+type SortOption = 'recent' | 'scans-desc' | 'id-asc' | 'type-asc';
 
 interface TagsPageProps {
   onBackToLanding?: () => void;
   onOpenActivation?: () => void;
 }
 
-type LayoutMode = 'grid' | 'table';
-type SortOption = 'recent' | 'scans-desc' | 'id-asc' | 'type-asc';
-
 export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsPageProps) {
   const ctx = useDashboardContext();
   const childrenData = ctx?.childrenData || initialChildrenData;
   const onOpenActivation = propOpenActivation || ctx?.onOpenActivation;
 
-  // Layout mode state (persists in localStorage)
+  // Custom Hooks
+  const { isAuthenticated } = useAuth();
+  const { tags: apiTags, loading, error, createTag, updateTag, deleteTag } = useTags();
+  const { children, createChild } = useChildren();
+
+  // Local Form State
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [tagCode, setTagCode] = useState('');
+  const [childId, setChildId] = useState('');
+  const [newChildName, setNewChildName] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  // Default selected child
+  useEffect(() => {
+    if (children.length > 0 && !childId) {
+      setChildId(String(children[0].id));
+    } else if (children.length === 0 && !childId) {
+      setChildId('__new__');
+    }
+  }, [children, childId]);
+
+  // Add tag handler using custom hook
+  const handleAddTag = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tagCode) return;
+
+    setAdding(true);
+    try {
+      let targetChildId = childId;
+
+      // If user chose to create a new child or has no children
+      if ((targetChildId === '__new__' || !targetChildId) && newChildName.trim()) {
+        const createdChild = await createChild(newChildName.trim());
+        if (createdChild?.id) {
+          targetChildId = String(createdChild.id);
+        } else {
+          alert('Failed to create child');
+          setAdding(false);
+          return;
+        }
+      }
+
+      if (!targetChildId || targetChildId === '__new__') {
+        alert('Please select a child or enter a new child name');
+        setAdding(false);
+        return;
+      }
+
+      await createTag(tagCode, Number(targetChildId));
+      setShowAddForm(false);
+      setTagCode('');
+      setNewChildName('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to add tag');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  // Delete tag handler using custom hook
+  const handleDelete = async (id: number | string) => {
+    if (!confirm('Are you sure you want to delete this tag?')) return;
+    try {
+      await deleteTag(id);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete tag');
+    }
+  };
+
+  // Toggle active tag handler using custom hook
+  const handleToggleActive = async (id: number | string, isActive: boolean) => {
+    try {
+      await updateTag(id, { isActive });
+    } catch (err: any) {
+      alert(err.message || 'Failed to update tag');
+    }
+  };
+
+  // Layout mode state
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
     try {
       const saved = localStorage.getItem('kidditag_tags_layout_mode');
@@ -61,8 +143,23 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
   const [selectedInspectTag, setSelectedInspectTag] = useState<TagWithChild | null>(null);
   const [selectedSimulateTag, setSelectedSimulateTag] = useState<TagWithChild | null>(null);
 
-  // Compile all tags with child metadata
-  const allTagsWithChild: TagWithChild[] = useMemo(() => {
+  // Compile all tags with child metadata (prefer real API tags when authenticated, fallback to mock only if guest)
+  const allTagsWithChild: (TagWithChild & { apiId?: number })[] = useMemo(() => {
+    if (isAuthenticated) {
+      return apiTags.map((tag) => ({
+        id: tag.tagCode,
+        apiId: tag.id,
+        type: 'Smart Safety Tag',
+        color: 'Electric Purple',
+        status: tag.isActive ? 'Active' : 'Inactive',
+        scans: 0,
+        lastScan: new Date(tag.createdAt).toLocaleDateString(),
+        location: 'Safe Zone',
+        childName: tag.child?.name || 'Child',
+        childAvatar: '👧',
+      }));
+    }
+
     const list: TagWithChild[] = [];
     Object.values(childrenData).forEach((child) => {
       child.tags.forEach((tag) => {
@@ -74,7 +171,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
       });
     });
     return list;
-  }, [childrenData]);
+  }, [apiTags, childrenData, isAuthenticated]);
 
   // Filtered & Sorted Tags
   const filteredTags = useMemo(() => {
@@ -82,8 +179,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
       .filter((tag) => {
         // Child filter
         if (childFilter !== 'all') {
-          const matchedChild = childrenData[childFilter];
-          if (matchedChild && tag.childName !== matchedChild.name) {
+          if (tag.childName.toLowerCase() !== childFilter.toLowerCase()) {
             return false;
           }
         }
@@ -118,10 +214,9 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
         if (sortBy === 'type-asc') {
           return a.type.localeCompare(b.type);
         }
-        // default recent
         return 0;
       });
-  }, [allTagsWithChild, childFilter, childrenData, statusFilter, searchQuery, sortBy]);
+  }, [allTagsWithChild, childFilter, statusFilter, searchQuery, sortBy]);
 
   // Overall metric statistics
   const totalTagsCount = allTagsWithChild.length;
@@ -137,9 +232,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
 
   return (
     <div className="dash-view-container">
-      {/* -------------------------------------------------------------
-          1. HEADER ROW: TITLE & ACTION
-          ------------------------------------------------------------- */}
+      {/* 1. HEADER ROW: TITLE & ACTION */}
       <div className="dash-section-headline-row">
         <div>
           <h2 className="dash-section-h2">Physical Smart Tags ({allTagsWithChild.length})</h2>
@@ -149,17 +242,121 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
         </div>
         <button 
           className="btn-primary" 
-          onClick={() => onOpenActivation?.()}
+          onClick={() => setShowAddForm(prev => !prev)}
           title="Register or pair a new physical KiddieTag"
         >
           <Plus size={16} />
-          <span>Register Another Tag</span>
+          <span>{showAddForm ? 'Close Form' : 'Register Another Tag'}</span>
         </button>
       </div>
 
-      {/* -------------------------------------------------------------
-          2. SUMMARY METRICS RIBBON (4 KPI Cards)
-          ------------------------------------------------------------- */}
+      {error && <p style={{ color: 'red', marginBottom: 12 }}>{error}</p>}
+
+      {/* ADD TAG FORM */}
+      {showAddForm && (
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: 14,
+          padding: 24,
+          marginBottom: 28,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
+        }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#1e293b' }}>
+            Register & Assign New Smart Tag
+          </h3>
+          <form onSubmit={handleAddTag} style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6, color: '#475569' }}>
+                Tag Code (Serial / Barcode)
+              </label>
+              <input
+                className="input-field"
+                placeholder="e.g. KT-9902"
+                value={tagCode}
+                onChange={e => setTagCode(e.target.value)}
+                required
+                style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }}
+              />
+            </div>
+            
+            <div style={{ flex: '1 1 220px' }}>
+              <label style={{ fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 6, color: '#475569' }}>
+                Assign to Child
+              </label>
+              {children.length > 0 ? (
+                <>
+                  <select
+                    value={childId}
+                    onChange={e => setChildId(e.target.value)}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: '1px solid #cbd5e1',
+                      background: '#fff',
+                      color: '#1e293b',
+                      fontSize: 14,
+                      outline: 'none'
+                    }}
+                  >
+                    {children.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                    <option value="__new__">+ Register New Child...</option>
+                  </select>
+
+                  {childId === '__new__' && (
+                    <input
+                      placeholder="Enter new child name"
+                      value={newChildName}
+                      onChange={e => setNewChildName(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: 8,
+                        border: '1px solid #cbd5e1',
+                        marginTop: 8
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <input
+                  placeholder="Enter child name (e.g. Maya)"
+                  value={newChildName}
+                  onChange={e => setNewChildName(e.target.value)}
+                  required
+                  style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid #cbd5e1' }}
+                />
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={adding}
+                style={{ height: 42, padding: '0 20px', borderRadius: 8 }}
+              >
+                {adding ? 'Saving...' : 'Save Tag'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowAddForm(false)}
+                style={{ height: 42, padding: '0 18px', borderRadius: 8, background: '#f1f5f9', border: 'none', color: '#64748b' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 2. SUMMARY METRICS RIBBON (4 KPI Cards) */}
       <div className="dash-tags-summary-ribbon">
         <div className="tags-summary-card">
           <div className="tags-summary-icon-box purple">
@@ -202,13 +399,10 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
         </div>
       </div>
 
-      {/* -------------------------------------------------------------
-          3. CONTROLS BAR: SEARCH, CHILD FILTER, STATUS, SORT & VIEW SWITCHER
-          ------------------------------------------------------------- */}
+      {/* 3. CONTROLS BAR: SEARCH, CHILD FILTER, STATUS, SORT & VIEW SWITCHER */}
       <div className="dash-tags-controls-bar">
         {/* Left Side: Search & Child Selection */}
         <div className="dash-tags-controls-left">
-          {/* Search Box */}
           <div className="tags-search-input-wrapper">
             <Search size={16} className="tags-search-icon" />
             <input 
@@ -230,7 +424,6 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
             )}
           </div>
 
-          {/* Child Filter Tabs */}
           <div className="tags-filter-pill-group">
             <button 
               type="button"
@@ -241,15 +434,14 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
               <span className="tags-filter-count-badge">{allTagsWithChild.length}</span>
             </button>
 
-            {Object.entries(childrenData).map(([key, child]) => (
+            {children.map(c => (
               <button 
-                key={key}
+                key={c.id}
                 type="button"
-                className={`tags-filter-pill-btn ${childFilter === key ? 'active' : ''}`}
-                onClick={() => setChildFilter(key)}
+                className={`tags-filter-pill-btn ${childFilter.toLowerCase() === c.name.toLowerCase() ? 'active' : ''}`}
+                onClick={() => setChildFilter(c.name)}
               >
-                <span>{child.avatar} {child.name.split(' ')[0]}</span>
-                <span className="tags-filter-count-badge">{child.tags.length}</span>
+                <span>👧 {c.name}</span>
               </button>
             ))}
           </div>
@@ -257,7 +449,6 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
 
         {/* Right Side: Status Filter, Sort By & Layout Switcher */}
         <div className="dash-tags-controls-right">
-          {/* Status Filter */}
           <div className="tags-select-wrapper">
             <select 
               className="tags-filter-select"
@@ -272,7 +463,6 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
             </select>
           </div>
 
-          {/* Sort Dropdown */}
           <div className="tags-select-wrapper">
             <select 
               className="tags-filter-select"
@@ -287,7 +477,6 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
             </select>
           </div>
 
-          {/* Dual Layout Switcher Toggle */}
           <div className="tags-layout-switcher" role="radiogroup" aria-label="Layout view mode">
             <button 
               type="button"
@@ -316,10 +505,12 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
         </div>
       </div>
 
-      {/* -------------------------------------------------------------
-          4. MAIN VIEW CONTENT (GRID OR TABLE)
-          ------------------------------------------------------------- */}
-      {filteredTags.length === 0 ? (
+      {/* 4. MAIN VIEW CONTENT (GRID OR TABLE) */}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+          <Loader2 size={32} className="spin" style={{ color: 'var(--brand-purple)' }} />
+        </div>
+      ) : filteredTags.length === 0 ? (
         <div className="tags-empty-state">
           <div className="tags-empty-icon-wrap">
             <TagIcon size={28} />
@@ -335,7 +526,6 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
           </button>
         </div>
       ) : layoutMode === 'grid' ? (
-        /* GRID LAYOUT */
         <div className="dash-cards-grid-3">
           {filteredTags.map((tag) => (
             <TagsCard 
@@ -345,11 +535,12 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
               childAvatar={tag.childAvatar}
               onInspectQr={(t) => setSelectedInspectTag({ ...t, childName: tag.childName, childAvatar: tag.childAvatar })}
               onSimulateScan={(t) => setSelectedSimulateTag({ ...t, childName: tag.childName, childAvatar: tag.childAvatar })}
+              onDelete={handleDelete}
+              onToggleActive={handleToggleActive}
             />
           ))}
         </div>
       ) : (
-        /* LIST / TABLE LAYOUT */
         <TagTable 
           tags={filteredTags}
           onInspectQr={(t) => setSelectedInspectTag(filteredTags.find((item) => item.id === t.id) || null)}
@@ -357,9 +548,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
         />
       )}
 
-      {/* -------------------------------------------------------------
-          5. INTERACTIVE QR INSPECT MODAL
-          ------------------------------------------------------------- */}
+      {/* 5. INTERACTIVE QR INSPECT MODAL */}
       {selectedInspectTag && (
         <TagQrModal 
           tag={selectedInspectTag}
@@ -370,9 +559,7 @@ export default function TagsPage({ onOpenActivation: propOpenActivation }: TagsP
         />
       )}
 
-      {/* -------------------------------------------------------------
-          6. INTERACTIVE SCAN SIMULATOR MODAL
-          ------------------------------------------------------------- */}
+      {/* 6. INTERACTIVE SCAN SIMULATOR MODAL */}
       {selectedSimulateTag && (
         <TagScanSimulatorModal 
           tag={selectedSimulateTag}
