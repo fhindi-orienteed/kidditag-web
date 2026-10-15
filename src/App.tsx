@@ -8,6 +8,7 @@ import ContactPage from "./pages/ContactPage";
 import AuthLayout from "./layout/AuthLayout";
 import LoginPage from "./pages/auth/login";
 import RegisterPage from "./pages/auth/register";
+import VerifyEmailPage from "./pages/auth/verify-email";
 import DashboardLayout from "./layout/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
 import TagsPage from "./pages/dashboard/tags";
@@ -54,11 +55,17 @@ export default function App() {
           <Route index element={<Navigate to="/auth/login" replace />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="verify-email" element={<VerifyEmailPage />} />
         </Route>
 
         {/* Direct URL shortcuts */}
         <Route path="/login" element={<Navigate to="/auth/login" replace />} />
         <Route path="/register" element={<Navigate to="/auth/register" replace />} />
+        <Route
+          element={<AuthLayout onOpenActivation={handleOpenActivation} />}
+        >
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+        </Route>
 
         {/* Parent Dashboard with Common DashboardLayout */}
         <Route
