@@ -43,7 +43,8 @@ export default function RegisterPage() {
 
     try {
       await api.post("/auth/register", {
-        userName: name,
+        userName: email,
+        name: name,
         email: email,
         password: password,
       });

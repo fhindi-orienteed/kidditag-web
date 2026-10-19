@@ -53,8 +53,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Compute clean display name
   const displayName = useMemo(() => {
     if (!user) return 'Sarah Sinclair';
-    const raw = user.userName || user.name || user.email || 'User';
-    return raw.replace(/_/g, ' ');
+    // Prefer stored name, fallback to email prefix
+    if (user.name) return user.name;
+    const raw = user.userName || user.email || 'User';
+    const cleaned = raw.includes('@') ? raw.split('@')[0] : raw;
+    return cleaned.replace(/_/g, ' ').replace(/\./g, ' ');
   }, [user]);
 
   // Compute 2-character initials
