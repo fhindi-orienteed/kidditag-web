@@ -90,14 +90,12 @@ export default function App() {
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="medical" element={<MedicalPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route
-            path="admin/accounts"
-            element={
-              <AdminRoute>
-                <AdminAccountsPage />
-              </AdminRoute>
-            }
-          />
+          {/* Admin Guarded Section */}
+          <Route element={<AdminRoute />}>
+            <Route path="admin/accounts" element={<AdminAccountsPage />} />
+            {/* Future admin routes automatically inherit protection */}
+            {/* <Route path="admin/logs" element={<AdminLogsPage />} /> */}
+          </Route>
         </Route>
 
         {/* Fallback to Landing Page under WebsiteLayout */}
