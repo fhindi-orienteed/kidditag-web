@@ -18,6 +18,8 @@ import ContactsPage from "./pages/dashboard/contacts";
 import MedicalPage from "./pages/dashboard/medical";
 import SettingsPage from "./pages/dashboard/settings";
 import ActivationModal from "./components/ActivationModal";
+import AdminAccountsPage from "./pages/dashboard/admin/accounts";
+import AdminRoute from "./components/AdminRoute";
 import "./App.css";
 
 export default function App() {
@@ -88,6 +90,12 @@ export default function App() {
           <Route path="contacts" element={<ContactsPage />} />
           <Route path="medical" element={<MedicalPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          {/* Admin Guarded Section */}
+          <Route element={<AdminRoute />}>
+            <Route path="admin/accounts" element={<AdminAccountsPage />} />
+            {/* Future admin routes automatically inherit protection */}
+            {/* <Route path="admin/logs" element={<AdminLogsPage />} /> */}
+          </Route>
         </Route>
 
         {/* Fallback to Landing Page under WebsiteLayout */}

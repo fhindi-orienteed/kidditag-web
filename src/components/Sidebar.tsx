@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  Building2,
   HeartPulse,
   LayoutDashboard,
   LogOut,
@@ -24,7 +25,7 @@ export default function Sidebar({ onOpenActivation }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const { displayName, initials, logout } = useAuth();
+  const { user, displayName, initials, logout } = useAuth();
 
   const navItems = [
     { id: 'overview', path: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -33,7 +34,10 @@ export default function Sidebar({ onOpenActivation }: Props) {
     { id: 'map', path: '/dashboard/map', label: 'Live Scan Map', icon: MapPin, badge: 'Live' },
     { id: 'contacts', path: '/dashboard/contacts', label: 'Emergency Contacts', icon: PhoneCall },
     { id: 'medical', path: '/dashboard/medical', label: 'Medical & Allergy', icon: HeartPulse },
-    { id: 'settings', path: '/dashboard/settings', label: 'Safety & Settings', icon: Settings }
+    { id: 'settings', path: '/dashboard/settings', label: 'Safety & Settings', icon: Settings },
+    ...(user?.role === 'admin'
+      ? [{ id: 'admin-accounts', path: '/dashboard/admin/accounts', label: 'All Accounts', icon: Building2, badge: 'Admin' }]
+      : [])
   ];
 
   return (
