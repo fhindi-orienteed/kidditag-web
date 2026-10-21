@@ -1,15 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Building2, 
   Search, 
   RefreshCw, 
-  CheckCircle2, 
+  CheckCircle2,
+  UserX, 
   Clock, 
   AlertCircle, 
   Users, 
   Tag as TagIcon,
   Shield,
-  Calendar
+  Calendar,
+  ChevronRight
 } from 'lucide-react';
 import api from '../../../../services/api';
 import './accounts.css';
@@ -38,6 +41,7 @@ interface AccountItem {
 }
 
 export default function AdminAccountsPage() {
+  const navigate = useNavigate();
   const [accounts, setAccounts] = useState<AccountItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -213,11 +217,16 @@ export default function AdminAccountsPage() {
                   <th>Users</th>
                   <th>Tags</th>
                   <th>Registered Date</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredAccounts.map((acc) => (
-                  <tr key={acc.id}>
+                  <tr 
+                    key={acc.id} 
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/dashboard/admin/accounts/${acc.id}`)}
+                  >
                     <td>
                       <span className="account-id-badge">#{acc.id}</span>
                     </td>
@@ -228,6 +237,7 @@ export default function AdminAccountsPage() {
                       <span className={`status-badge ${acc.status?.toLowerCase()}`}>
                         {acc.status === 'active' && <CheckCircle2 size={12} />}
                         {acc.status === 'pending' && <Clock size={12} />}
+                        {acc.status === 'disabled' && <UserX size={12} />}
                         {acc.status || 'unknown'}
                       </span>
                     </td>
@@ -278,6 +288,31 @@ export default function AdminAccountsPage() {
                         <Calendar size={13} />
                         {formatDate(acc.createdAt)}
                       </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="admin-btn-view"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/dashboard/admin/accounts/${acc.id}`);
+                        }}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          padding: '6px 12px',
+                          background: '#f1f5f9',
+                          color: '#4338ca',
+                          border: '1px solid #e0e7ff',
+                          borderRadius: 6,
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <span>Manage</span>
+                        <ChevronRight size={13} />
+                      </button>
                     </td>
                   </tr>
                 ))}
