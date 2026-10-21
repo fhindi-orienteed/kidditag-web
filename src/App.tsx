@@ -19,6 +19,7 @@ import MedicalPage from "./pages/dashboard/medical";
 import SettingsPage from "./pages/dashboard/settings";
 import ActivationModal from "./components/ActivationModal";
 import AdminAccountsPage from "./pages/dashboard/admin/accounts";
+import AdminAccountDetailsPage from "./pages/dashboard/admin/accounts/details";
 import AdminRoute from "./components/AdminRoute";
 import "./App.css";
 
@@ -93,6 +94,7 @@ export default function App() {
           {/* Admin Guarded Section */}
           <Route element={<AdminRoute />}>
             <Route path="admin/accounts" element={<AdminAccountsPage />} />
+            <Route path="admin/accounts/:id" element={<AdminAccountDetailsPage />} />
             {/* Future admin routes automatically inherit protection */}
             {/* <Route path="admin/logs" element={<AdminLogsPage />} /> */}
           </Route>
