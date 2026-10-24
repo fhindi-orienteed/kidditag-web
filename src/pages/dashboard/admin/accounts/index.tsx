@@ -1,113 +1,33 @@
-import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Building2, 
-  Search, 
-  RefreshCw, 
+import {
+  Building2,
+  Search,
+  RefreshCw,
   CheckCircle2,
-  UserX, 
-  Clock, 
-  AlertCircle, 
-  Users, 
+  UserX,
+  Clock,
+  AlertCircle,
+  Users,
   Tag as TagIcon,
-  Shield,
   Calendar,
   ChevronRight
 } from 'lucide-react';
-import api from '../../../../services/api';
 import '@styles/pages/accounts.scss';
-
-interface AccountUser {
-  id: number;
-  name: string | null;
-  userName: string;
-  email: string | null;
-  role: string;
-  isVerified: boolean;
-  createdAt: string;
-}
-
-interface AccountItem {
-  id: number;
-  name: string | null;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  users: AccountUser[];
-  _count: {
-    users: number;
-    tags: number;
-  };
-}
+import { useAccounts } from '@/hooks/useAccounts';
 
 export default function AdminAccountsPage() {
   const navigate = useNavigate();
-  const [accounts, setAccounts] = useState<AccountItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const fetchAccounts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await api.get('/admin/accounts');
-      // Handle standard response structure { success: true, data: [...] } or array directly
-      const data = response.data?.data || response.data || [];
-      setAccounts(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      console.error('Failed to load accounts:', err);
-      setError(err?.response?.data?.message || err?.message || 'Failed to fetch registered accounts.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  // Filter accounts by search query
-  const filteredAccounts = useMemo(() => {
-    if (!searchQuery.trim()) return accounts;
-    const q = searchQuery.toLowerCase().trim();
-
-    return accounts.filter((acc) => {
-      const matchName = acc.name?.toLowerCase().includes(q);
-      const matchStatus = acc.status?.toLowerCase().includes(q);
-      const matchId = String(acc.id).includes(q);
-      const matchUser = acc.users?.some(
-        (u) =>
-          u.name?.toLowerCase().includes(q) ||
-          u.email?.toLowerCase().includes(q) ||
-          u.userName?.toLowerCase().includes(q)
-      );
-
-      return matchName || matchStatus || matchId || matchUser;
-    });
-  }, [accounts, searchQuery]);
-
-  // Quick statistics
-  const stats = useMemo(() => {
-    const total = accounts.length;
-    const active = accounts.filter((a) => a.status === 'active').length;
-    const pending = accounts.filter((a) => a.status === 'pending').length;
-    return { total, active, pending };
-  }, [accounts]);
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '—';
-    try {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch {
-      return dateStr;
-    }
-  };
+  const {
+    accounts,
+    loading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    filteredAccounts,
+    stats,
+    formatDate,
+    fetchAccounts,
+  } = useAccounts();
 
   return (
     <div className="admin-accounts-container">
@@ -124,9 +44,9 @@ export default function AdminAccountsPage() {
           </p>
         </div>
 
-        <button 
-          className="admin-btn-refresh" 
-          onClick={fetchAccounts} 
+        <button
+          className="admin-btn-refresh"
+          onClick={fetchAccounts}
           disabled={loading}
           title="Refresh Accounts"
         >
@@ -222,8 +142,8 @@ export default function AdminAccountsPage() {
               </thead>
               <tbody>
                 {filteredAccounts.map((acc) => (
-                  <tr 
-                    key={acc.id} 
+                  <tr
+                    key={acc.id}
                     style={{ cursor: 'pointer' }}
                     onClick={() => navigate(`/dashboard/admin/accounts/${acc.id}`)}
                   >
@@ -248,14 +168,14 @@ export default function AdminAccountsPage() {
                             <span className="account-user-name">
                               {u.name || u.userName}
                               {u.role === 'admin' && (
-                                <span 
-                                  style={{ 
-                                    marginLeft: 6, 
-                                    fontSize: '0.7rem', 
-                                    background: '#ede9fe', 
-                                    color: '#6d28d9', 
-                                    padding: '1px 5px', 
-                                    borderRadius: 4 
+                                <span
+                                  style={{
+                                    marginLeft: 6,
+                                    fontSize: '0.7rem',
+                                    background: '#ede9fe',
+                                    color: '#6d28d9',
+                                    padding: '1px 5px',
+                                    borderRadius: 4
                                   }}
                                 >
                                   Admin

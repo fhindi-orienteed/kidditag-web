@@ -1,12 +1,6 @@
 @use '../abstracts' as *;
 
 /* Admin Accounts Page Styles */
-.admin-accounts-container {
-  padding: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
 .admin-header-row {
   @include flex-between;
   margin-bottom: 24px;

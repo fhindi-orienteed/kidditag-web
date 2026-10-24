@@ -1,3 +1,5 @@
+export * from './account'
+
 export interface Tag {
   id: string;
   type: string;
