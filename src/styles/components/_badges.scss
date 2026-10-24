@@ -1,0 +1,131 @@
+@use '../abstracts' as *;
+
+.section-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: $radius-full;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+
+  &.purple {
+    background: $brand-purple-soft;
+    color: $brand-purple;
+    border: 1px solid $brand-purple-border;
+  }
+
+  &.green {
+    background: $accent-green-soft;
+    color: $accent-green-dark;
+    border: 1px solid $accent-green-border;
+  }
+}
+
+.badge-save {
+  @include badge($accent-green-soft, $accent-green-dark, $accent-green-border);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.status-badge {
+  @include badge(#f1f5f9, #475569);
+  padding: 4px 10px;
+  text-transform: capitalize;
+
+  &.active {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+  }
+
+  &.pending {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+
+  &.suspended {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+}
+
+.user-status-pill {
+  @include badge(#f1f5f9, #475569);
+  padding: 3px 9px;
+  text-transform: capitalize;
+
+  &.active {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+  }
+
+  &.disabled {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+  }
+}
+
+.count-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: $radius-xs;
+  background: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.tag-status-pill {
+  @include badge(#f1f5f9, #64748b, #cbd5e1);
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  &.active {
+    background: $accent-green-soft;
+    color: $accent-green-dark;
+    border-color: $accent-green-border;
+  }
+
+  &.pending {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fde68a;
+  }
+
+  &.inactive {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #cbd5e1;
+  }
+}
+
+.status-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+
+  &.active-pulse {
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      background: $accent-green;
+      opacity: 0.6;
+      animation: pulseGlow 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+  }
+}

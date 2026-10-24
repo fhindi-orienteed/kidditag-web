@@ -1,0 +1,33 @@
+@use '../abstracts' as *;
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-heading;
+  color: $text-main;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.container {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 52px;
+}
+
+.section-title {
+  font-size: 2.35rem;
+  margin-bottom: 14px;
+}
+
+.section-desc {
+  font-size: 1.05rem;
+  color: $text-body;
+  line-height: 1.6;
+}

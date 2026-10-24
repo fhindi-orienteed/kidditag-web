@@ -21,7 +21,7 @@ import { type TagWithChild } from './tagUtils';
 import { useAuth } from '../../../context/AuthContext';
 import { useTags } from '../../../hooks/useTags';
 import { useChildren } from '../../../hooks/useChildren';
-import './tags.css';
+import '@styles/pages/tags.scss';
 
 type LayoutMode = 'grid' | 'table';
 type SortOption = 'recent' | 'scans-desc' | 'id-asc' | 'type-asc';

@@ -18,7 +18,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import api from '../../../../../services/api';
-import './accountDetails.css';
+import '@styles/pages/account-details.scss';
 
 interface UserItem {
   id: number;

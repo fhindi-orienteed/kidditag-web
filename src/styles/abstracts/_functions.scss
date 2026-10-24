@@ -1,0 +1,21 @@
+@use 'sass:math';
+@use 'sass:color';
+
+// Convert pixels to rem units (based on 16px default browser font size)
+@function rem($px) {
+  @if math.is-unitless($px) {
+    @return math.div($px, 16) * 1rem;
+  } @else {
+    @return math.div($px, 16px) * 1rem;
+  }
+}
+
+// Tint a color with white
+@function tint($color, $percentage) {
+  @return color.mix(#ffffff, $color, $percentage);
+}
+
+// Shade a color with black
+@function shade($color, $percentage) {
+  @return color.mix(#000000, $color, $percentage);
+}

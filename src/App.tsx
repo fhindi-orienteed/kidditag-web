@@ -21,7 +21,7 @@ import ActivationModal from "./components/ActivationModal";
 import AdminAccountsPage from "./pages/dashboard/admin/accounts";
 import AdminAccountDetailsPage from "./pages/dashboard/admin/accounts/details";
 import AdminRoute from "./components/AdminRoute";
-import "./App.css";
+import "@styles/pages/landing.scss";
 
 export default function App() {
   const [isActivationOpen, setIsActivationOpen] = useState(false);

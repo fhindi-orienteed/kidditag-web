@@ -20,7 +20,11 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    "allowJs": true
+    "allowJs": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@styles/*": ["./src/styles/*"]
+    }
   },
   "include": ["src"]
 }

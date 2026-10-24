@@ -1,0 +1,12 @@
+// ===================================================================
+// KiddieTag Master SCSS Entry Point
+// ===================================================================
+
+// 1. Abstracts (variables, functions, mixins)
+@use 'abstracts' as *;
+
+// 2. Base styles (CSS custom properties, reset, typography, animations)
+@use 'base';
+
+// 3. Reusable Components (buttons, badges, modals)
+@use 'components';

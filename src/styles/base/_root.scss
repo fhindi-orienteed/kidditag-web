@@ -1,0 +1,52 @@
+@use '../abstracts/variables' as *;
+
+:root {
+  --font-heading: #{$font-heading};
+  --font-body: #{$font-body};
+  --font-mono: #{$font-mono};
+
+  // Color Palette
+  --brand-purple: #{$brand-purple};
+  --brand-purple-hover: #{$brand-purple-hover};
+  --brand-purple-dark: #{$brand-purple-dark};
+  --brand-purple-soft: #{$brand-purple-soft};
+  --brand-purple-border: #{$brand-purple-border};
+  --brand-purple-glow: #{$brand-purple-glow};
+
+  --accent-green: #{$accent-green};
+  --accent-green-dark: #{$accent-green-dark};
+  --accent-green-soft: #{$accent-green-soft};
+  --accent-green-border: #{$accent-green-border};
+
+  --accent-red: #{$accent-red};
+  --accent-red-soft: #{$accent-red-soft};
+  --accent-red-border: #{$accent-red-border};
+
+  --text-main: #{$text-main};
+  --text-body: #{$text-body};
+  --text-muted: #{$text-muted};
+  --text-light: #{$text-light};
+
+  --bg-page: #{$bg-page};
+  --bg-card: #{$bg-card};
+  --bg-subtle: #{$bg-subtle};
+
+  --border-light: #{$border-light};
+  --border-card: #{$border-card};
+
+  // Elevation
+  --shadow-sm: #{$shadow-sm};
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+  --shadow-hover: #{$shadow-hover};
+
+  // Radius
+  --radius-sm: #{$radius-sm};
+  --radius-md: #{$radius-md};
+  --radius-lg: #{$radius-lg};
+  --radius-xl: #{$radius-xl};
+  --radius-full: #{$radius-full};
+
+  // Transitions
+  --transition: #{$transition-base};
+}

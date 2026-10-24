@@ -1,0 +1,81 @@
+// ===================================================================
+// KiddieTag Design Tokens & Sass Variables
+// ===================================================================
+
+// Typography
+$font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !default;
+$font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !default;
+$font-mono: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace !default;
+
+// Brand Colors
+$brand-purple: #582be8 !default;
+$brand-purple-hover: #4b22ce !default;
+$brand-purple-dark: #1b104a !default;
+$brand-purple-soft: #f4f0ff !default;
+$brand-purple-border: #e4d8ff !default;
+$brand-purple-glow: rgba(88, 43, 232, 0.2) !default;
+
+// Accent Colors
+$accent-green: #0ea76b !default;
+$accent-green-dark: #0a8453 !default;
+$accent-green-soft: #eaf8f1 !default;
+$accent-green-border: #b9eed5 !default;
+
+$accent-red: #e53e3e !default;
+$accent-red-dark: #b91c1c !default;
+$accent-red-soft: #fff1f1 !default;
+$accent-red-border: #fed7d7 !default;
+
+$accent-amber: #d97706 !default;
+$accent-amber-dark: #b45309 !default;
+$accent-amber-soft: #fffbeb !default;
+$accent-amber-border: #fde68a !default;
+
+$accent-blue: #2563eb !default;
+$accent-blue-soft: #eff6ff !default;
+
+// Neutral Colors
+$text-main: #140d3a !default;
+$text-body: #595573 !default;
+$text-muted: #8d89a5 !default;
+$text-light: #ffffff !default;
+
+$bg-page: #faf9fe !default;
+$bg-card: #ffffff !default;
+$bg-subtle: #f5f3fc !default;
+
+$border-light: #eeeaf8 !default;
+$border-card: #e7e2f5 !default;
+
+// Elevation & Shadows
+$shadow-sm: 0 2px 8px rgba(20, 13, 58, 0.04) !default;
+$shadow-md: 0 8px 24px rgba(88, 43, 232, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02) !default;
+$shadow-lg: 0 20px 48px rgba(88, 43, 232, 0.12), 0 4px 16px rgba(0, 0, 0, 0.04) !default;
+$shadow-hover: 0 24px 50px rgba(88, 43, 232, 0.16) !default;
+
+// Border Radii
+$radius-xs: 4px !default;
+$radius-sm: 8px !default;
+$radius-md: 14px !default;
+$radius-lg: 20px !default;
+$radius-xl: 28px !default;
+$radius-full: 9999px !default;
+
+// Transitions
+$transition-fast: all 0.15s ease !default;
+$transition-base: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !default;
+$transition-smooth: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !default;
+
+// Responsive Breakpoints
+$breakpoint-xs: 480px !default;
+$breakpoint-sm: 640px !default;
+$breakpoint-md: 768px !default;
+$breakpoint-lg: 1024px !default;
+$breakpoint-xl: 1280px !default;
+$breakpoint-2xl: 1536px !default;
+
+// Z-Index Stack
+$z-dropdown: 50 !default;
+$z-sticky: 100 !default;
+$z-modal-backdrop: 900 !default;
+$z-modal: 1000 !default;

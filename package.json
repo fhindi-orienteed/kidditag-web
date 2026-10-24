@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "sass:build": "sass src/styles:src/styles --no-source-map",
+    "sass:watch": "sass --watch src/styles:src/styles --no-source-map",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint",
     "preview": "vite preview"
@@ -23,6 +25,7 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "sass": "^1.106.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"
   }

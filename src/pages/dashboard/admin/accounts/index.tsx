@@ -15,7 +15,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import api from '../../../../services/api';
-import './accounts.css';
+import '@styles/pages/accounts.scss';
 
 interface AccountUser {
   id: number;
