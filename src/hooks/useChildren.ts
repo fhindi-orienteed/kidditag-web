@@ -5,6 +5,11 @@ import { useAuth } from '../context/AuthContext';
 export interface ChildItem {
   id: number;
   name: string;
+  dateOfBirth?: string;
+  medicalInfo?: string;
+  allergies?: string;
+  photoUrl?: string;
+  tags?: any[];
 }
 
 export const useChildren = () => {
@@ -34,14 +39,25 @@ export const useChildren = () => {
     }
   }, [isAuthenticated]);
 
-  const createChild = useCallback(async (name: string, dateOfBirth: string = '2020-01-01'): Promise<ChildItem> => {
+  const createChild = useCallback(async (name: string, dateOfBirth: string = '2020-01-01', photoUrl?: string): Promise<ChildItem> => {
     try {
-      const res = await api.post('/children', { name, dateOfBirth });
+      const res = await api.post('/children', { name, dateOfBirth, photoUrl });
       const created = res.data?.data || res.data;
       await fetchChildren();
       return created;
     } catch (err: any) {
       throw new Error(err.message || 'Failed to create child');
+    }
+  }, [fetchChildren]);
+
+  const updateChild = useCallback(async (id: number, data: { name?: string; photoUrl?: string; medicalInfo?: string; allergies?: string }): Promise<ChildItem> => {
+    try {
+      const res = await api.put(`/children/${id}`, data);
+      const updated = res.data?.data || res.data;
+      await fetchChildren();
+      return updated;
+    } catch (err: any) {
+      throw new Error(err.message || 'Failed to update child');
     }
   }, [fetchChildren]);
 
@@ -55,6 +71,7 @@ export const useChildren = () => {
     error,
     fetchChildren,
     createChild,
+    updateChild,
   };
 };
 

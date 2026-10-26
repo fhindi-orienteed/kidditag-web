@@ -21,6 +21,7 @@ import ActivationModal from "./components/ActivationModal";
 import AdminAccountsPage from "./pages/dashboard/admin/accounts";
 import AdminAccountDetailsPage from "./pages/dashboard/admin/accounts/details";
 import AdminRoute from "./components/AdminRoute";
+import PublicTagProfilePage from "./pages/PublicTagProfilePage";
 import "@styles/pages/landing.scss";
 
 export default function App() {
@@ -42,6 +43,10 @@ export default function App() {
   return (
     <div className="app-root">
       <Routes>
+        {/* Public Child Tag Emergency Profile (NFC / QR Scan) */}
+        <Route path="/scan/:tagCode" element={<PublicTagProfilePage />} />
+        <Route path="/tag/:tagCode" element={<PublicTagProfilePage />} />
+
         {/* Public Website Pages with Common WebsiteLayout */}
         <Route element={<WebsiteLayout onOpenActivation={handleOpenActivation} />}>
           <Route path="/" element={<LandingPage />} />
