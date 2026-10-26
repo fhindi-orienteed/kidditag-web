@@ -158,8 +158,11 @@ export default function LoginPage() {
             </div>
 
             <div className="form-group">
-              <div className="form-label-row">
+              <div className="form-label-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label htmlFor="login-password">Password</label>
+                <Link to="/auth/forgot-password" style={{ fontSize: '0.82rem', color: '#582be8', textDecoration: 'none', fontWeight: 600 }}>
+                  Forgot Password?
+                </Link>
               </div>
               <div className="input-with-icon">
                 <Lock size={18} className="input-icon" />
