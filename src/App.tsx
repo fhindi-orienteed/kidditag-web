@@ -9,6 +9,8 @@ import AuthLayout from "./layout/AuthLayout";
 import LoginPage from "./pages/auth/login";
 import RegisterPage from "./pages/auth/register";
 import VerifyEmailPage from "./pages/auth/verify-email";
+import ForgotPasswordPage from "./pages/auth/forgot-password";
+import ResetPasswordPage from "./pages/auth/reset-password";
 import DashboardLayout from "./layout/DashboardLayout";
 import DashboardPage from "./pages/DashboardPage";
 import TagsPage from "./pages/dashboard/tags";
@@ -21,6 +23,7 @@ import ActivationModal from "./components/ActivationModal";
 import AdminAccountsPage from "./pages/dashboard/admin/accounts";
 import AdminAccountDetailsPage from "./pages/dashboard/admin/accounts/details";
 import AdminRoute from "./components/AdminRoute";
+import PublicTagProfilePage from "./pages/PublicTagProfilePage";
 import "@styles/pages/landing.scss";
 
 export default function App() {
@@ -42,6 +45,10 @@ export default function App() {
   return (
     <div className="app-root">
       <Routes>
+        {/* Public Child Tag Emergency Profile (NFC / QR Scan) */}
+        <Route path="/scan/:tagCode" element={<PublicTagProfilePage />} />
+        <Route path="/tag/:tagCode" element={<PublicTagProfilePage />} />
+
         {/* Public Website Pages with Common WebsiteLayout */}
         <Route element={<WebsiteLayout onOpenActivation={handleOpenActivation} />}>
           <Route path="/" element={<LandingPage />} />
@@ -59,6 +66,8 @@ export default function App() {
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="verify-email" element={<VerifyEmailPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* Direct URL shortcuts */}

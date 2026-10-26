@@ -1,0 +1,379 @@
+// ===================================================================
+// Public Tag Emergency Profile SCSS
+// ===================================================================
+@use '../abstracts' as *;
+
+.public-tag-page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8f6fe 0%, #ffffff 100%);
+  display: flex;
+  flex-direction: column;
+  color: $text-main;
+  font-family: $font-body;
+
+  // Top Emergency Header Bar
+  .public-tag-topbar {
+    background: #ffffff;
+    border-bottom: 1px solid $border-card;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: $brand-purple;
+
+      .brand-icon {
+        width: 32px;
+        height: 32px;
+        background: $brand-purple-soft;
+        color: $brand-purple;
+        border-radius: $radius-sm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    .emergency-live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: $accent-red-soft;
+      color: $accent-red-dark;
+      border: 1px solid $accent-red-border;
+      padding: 5px 12px;
+      border-radius: $radius-full;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+
+      .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: $accent-red;
+        animation: pulse 1.8s infinite;
+      }
+    }
+  }
+
+  // Main Container
+  .public-tag-container {
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  // Alert Banner
+  .emergency-alert-card {
+    background: linear-gradient(135deg, #fff5f5 0%, #fee2e2 100%);
+    border: 1px solid #fecaca;
+    border-radius: $radius-lg;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.08);
+
+    .alert-icon-wrap {
+      width: 40px;
+      height: 40px;
+      border-radius: $radius-md;
+      background: #ef4444;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .alert-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #991b1b;
+      margin: 0 0 2px 0;
+    }
+
+    .alert-sub {
+      font-size: 0.82rem;
+      color: #7f1d1d;
+      margin: 0;
+      line-height: 1.4;
+    }
+  }
+
+  // Child Profile Hero Card
+  .child-profile-card {
+    background: #ffffff;
+    border: 1px solid $border-card;
+    border-radius: $radius-xl;
+    padding: 24px;
+    box-shadow: $shadow-md;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, $brand-purple 0%, #a855f7 100%);
+    }
+
+    .avatar-wrapper {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      margin: 8px auto 16px;
+
+      .child-avatar-img,
+      .child-avatar-fallback {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 4px 16px rgba(88, 43, 232, 0.15);
+        border: 4px solid #ffffff;
+      }
+
+      .child-avatar-fallback {
+        background: linear-gradient(135deg, $brand-purple-soft 0%, #ede9fe 100%);
+        color: $brand-purple;
+        font-size: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .status-badge-floating {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: $accent-green;
+        color: #ffffff;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    .child-name {
+      font-family: $font-heading;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: $text-main;
+      margin: 0 0 4px;
+    }
+
+    .tag-meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: $bg-subtle;
+      color: $text-body;
+      padding: 4px 12px;
+      border-radius: $radius-full;
+      font-size: 0.8rem;
+      font-family: $font-mono;
+      border: 1px solid $border-light;
+      margin-bottom: 12px;
+    }
+  }
+
+  // Primary Action: Call Guardian
+  .action-call-guardian {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    .btn-call-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: $radius-lg;
+      padding: 16px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.28);
+      transition: $transition-base;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(16, 185, 129, 0.36);
+        color: #ffffff;
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    .btn-share-location {
+      width: 100%;
+      background: #ffffff;
+      color: $brand-purple;
+      border: 1.5px solid $brand-purple-border;
+      border-radius: $radius-lg;
+      padding: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: $transition-base;
+
+      &:hover {
+        background: $brand-purple-soft;
+      }
+    }
+  }
+
+  // Medical & Safety Details Card
+  .details-card {
+    background: #ffffff;
+    border: 1px solid $border-card;
+    border-radius: $radius-xl;
+    padding: 20px;
+    box-shadow: $shadow-sm;
+
+    .card-heading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: $text-main;
+      margin: 0 0 16px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid $border-light;
+    }
+
+    .detail-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 10px 0;
+
+      &:not(:last-child) {
+        border-bottom: 1px dashed $border-light;
+      }
+
+      .detail-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: $text-muted;
+      }
+
+      .detail-value {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: $text-main;
+
+        &.highlight-allergy {
+          color: $accent-red-dark;
+          font-weight: 600;
+          background: $accent-red-soft;
+          padding: 6px 10px;
+          border-radius: $radius-sm;
+          border-left: 3px solid $accent-red;
+        }
+
+        &.highlight-medical {
+          color: $accent-amber-dark;
+          font-weight: 600;
+          background: $accent-amber-soft;
+          padding: 6px 10px;
+          border-radius: $radius-sm;
+          border-left: 3px solid $accent-amber;
+        }
+      }
+    }
+  }
+
+  // Footer Safe Notice
+  .public-tag-footer {
+    text-align: center;
+    padding-top: 10px;
+    color: $text-muted;
+    font-size: 0.8rem;
+    line-height: 1.5;
+
+    .footer-shield {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: $brand-purple;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+  }
+
+  // Loading & Error States
+  .tag-loading-box,
+  .tag-error-box {
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px 16px;
+    gap: 12px;
+  }
+
+  .tag-error-box {
+    .error-icon-circle {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: $accent-red-soft;
+      color: $accent-red;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: $text-main;
+      margin: 0;
+    }
+
+    p {
+      color: $text-body;
+      font-size: 0.92rem;
+      max-width: 400px;
+      margin: 0 0 16px;
+    }
+  }
+}
