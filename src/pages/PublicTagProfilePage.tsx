@@ -24,6 +24,13 @@ interface TagScanResponse {
   parentContact?: string;
   parentPhones?: string[];
   imageUrl?: string | null;
+  emergencyContacts?: {
+    id: number;
+    name: string;
+    relationship: string;
+    phoneNumber: string;
+    priority: string;
+  }[];
 }
 
 interface LocationDetails {
@@ -204,7 +211,21 @@ export default function PublicTagProfilePage() {
 
               {/* Call Guardian Actions */}
               <div className="action-call-guardian">
-                {primaryPhone ? (
+                {data.emergencyContacts && data.emergencyContacts.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {data.emergencyContacts.map((contact) => (
+                      <a
+                        key={contact.id}
+                        href={`tel:${contact.phoneNumber}`}
+                        className={contact.priority === 'Primary' ? 'btn-call-primary' : 'btn-secondary'}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}
+                      >
+                        <PhoneCall size={contact.priority === 'Primary' ? 20 : 16} />
+                        <span>Call {contact.name} ({contact.relationship})</span>
+                      </a>
+                    ))}
+                  </div>
+                ) : primaryPhone ? (
                   <a href={`tel:${primaryPhone}`} className="btn-call-primary">
                     <PhoneCall size={20} />
                     <span>Call Guardian ({primaryPhone})</span>
