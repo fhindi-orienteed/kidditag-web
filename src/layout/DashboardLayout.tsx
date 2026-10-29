@@ -19,6 +19,8 @@ import { initialChildrenData } from '../pages/dashboard/mockData';
 import type { ChildProfile } from '../types';
 import Sidebar from '../components/Sidebar';
 import HeaderDashboard from '../components/HeaderDashboard';
+import { useChildren } from '../hooks/useChildren';
+import { useScans } from '../hooks/useScans';
 
 interface DashboardLayoutProps {
   onOpenActivation?: () => void;
@@ -34,6 +36,10 @@ export default function DashboardLayout({ onOpenActivation }: DashboardLayoutPro
   const [lostModeActive, setLostModeActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [acknowledgedAlert, setAcknowledgedAlert] = useState(false);
+  const { children } = useChildren();
+  const firstChild = children.length > 0 ? children[0] : null;
+  const { scans } = useScans(firstChild?.id);
+  const latestScan = scans.length > 0 ? scans[0] : null;
 
   const currentChild = childrenData[selectedChild] || childrenData.maya;
 
@@ -86,22 +92,22 @@ export default function DashboardLayout({ onOpenActivation }: DashboardLayoutPro
         {/* Scrollable View Content with Outlet */}
         <main className="dash-content-scroll">
           {/* Emergency Alert Banner */}
-          {!acknowledgedAlert && currentChild.scanHistory.length > 0 && (
+          {!acknowledgedAlert && latestScan && (
             <div className="dash-alert-strip">
               <div className="dash-alert-strip-left">
                 <Radio size={20} className="dash-alert-pulse-icon" />
                 <div>
-                  <strong>Live Tag Scan:</strong> {currentChild.name}'s tag was scanned at <strong>{currentChild.scanHistory[0].location}</strong> ({currentChild.tags[0]?.lastScan || 'Recently'}).
+                  <strong>Live Tag Scan:</strong> {firstChild?.name || 'Your child'}'s tag (<code>{latestScan.tagCode}</code>) was scanned at <strong>{latestScan.locationName || 'Live GPS Coordinates'}</strong> ({new Date(latestScan.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}).
                 </div>
               </div>
               <div className="dash-alert-strip-actions">
                 <button
                   className="btn-primary"
-                  style={{ padding: '6px 14px', fontSize: '0.8rem' }}
-                  onClick={() => alert('Calling Good Samaritan via Safe Proxy: Proxy connecting...')}
+                  style={{ padding: '6px 14px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => navigate('/dashboard/map')}
                 >
-                  <PhoneCall size={14} />
-                  <span>Call Finder (Proxy)</span>
+                  <MapPin size={14} />
+                  <span>View on Map</span>
                 </button>
                 <button
                   className="dash-alert-dismiss"
