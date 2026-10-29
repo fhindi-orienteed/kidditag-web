@@ -114,6 +114,19 @@ export default function PublicTagProfilePage() {
           shortCity: cleanCity
         });
 
+        // Log real scan incident to backend database
+        try {
+          await api.post('/tags/scan-location', {
+            tagCode: tagCode || data?.tagCode,
+            latitude,
+            longitude,
+            locationName: cleanCity,
+            accuracy: position.coords?.accuracy || 10
+          });
+        } catch (postErr) {
+          console.warn('Scan location logging:', postErr);
+        }
+
         setTimeout(() => {
           setSendingLocation(false);
           setLocationSent(true);
