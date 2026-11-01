@@ -1,24 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { 
-  PhoneCall, 
-  MapPin, 
-  Heart, 
-  AlertTriangle, 
-  ShieldCheck, 
-  CheckCircle2, 
-  Loader2, 
-  HelpCircle, 
-  ExternalLink, 
-  Clock, 
-  Share2, 
-  MessageSquare, 
-  Copy, 
-  Check, 
-  X, 
-  Maximize2, 
-  Siren, 
-  Sparkles, 
+import { useParams, Link } from 'react-router-dom';
+import {
+  PhoneCall,
+  MapPin,
+  Heart,
+  AlertTriangle,
+  ShieldCheck,
+  CheckCircle2,
+  Loader2,
+  HelpCircle,
+  ExternalLink,
+  Clock,
+  Share2,
+  MessageSquare,
+  Copy,
+  Check,
+  Siren,
+  Sparkles,
   Navigation,
   Phone,
   AlertCircle
@@ -118,7 +116,6 @@ export default function PublicTagProfilePage() {
   const [currentLocation, setCurrentLocation] = useState<LocationDetails | null>(null);
 
   // Interactive UI State
-  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
   const [copiedTag, setCopiedTag] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -292,8 +289,8 @@ export default function PublicTagProfilePage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const primaryContact = data?.contacts && data.contacts.length > 0 
-    ? data.contacts[0] 
+  const primaryContact = data?.contacts && data.contacts.length > 0
+    ? data.contacts[0]
     : null;
 
   const primaryPhone = primaryContact?.phone || (data?.parentPhones && data.parentPhones.length > 0 ? data.parentPhones[0] : null);
@@ -323,8 +320,8 @@ export default function PublicTagProfilePage() {
             </div>
             <h2>Tag Not Found or Inactive</h2>
             <p>{error}</p>
-            <button 
-              type="button" 
+            <button
+              type="button"
               className="btn-demo-trigger"
               onClick={() => {
                 setData(DEMO_TAG_DATA);
@@ -342,15 +339,11 @@ export default function PublicTagProfilePage() {
             {/* BIG HERO PHOTO SECTION */}
             <div className="hero-photo-container">
               {data.imageUrl ? (
-                <div 
-                  className="big-photo-frame" 
-                  onClick={() => setIsPhotoModalOpen(true)}
-                  title="Tap to enlarge photo"
-                >
-                  <img 
-                    src={data.imageUrl} 
-                    alt={data.childName} 
-                    className="big-child-photo" 
+                <div className="big-photo-frame">
+                  <img
+                    src={data.imageUrl}
+                    alt={data.childName}
+                    className="big-child-photo"
                   />
                   {/* Subtle top floating bar over photo */}
                   <div className="photo-top-bar">
@@ -358,22 +351,14 @@ export default function PublicTagProfilePage() {
                       <span className="pulsing-beacon" />
                       <span>EMERGENCY SAFETY PASS</span>
                     </div>
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       className="photo-share-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleShareProfile();
-                      }}
+                      onClick={handleShareProfile}
                       title="Share link"
                     >
                       {copiedLink ? <Check size={16} /> : <Share2 size={16} />}
                     </button>
-                  </div>
-
-                  <div className="photo-zoom-hint">
-                    <Maximize2 size={15} />
-                    <span>Tap to view full photo</span>
                   </div>
                 </div>
               ) : (
@@ -415,26 +400,29 @@ export default function PublicTagProfilePage() {
               </div>
 
               {/* Key Child Attributes Pills */}
-              <div className="child-attributes-pills">
-                {data.age && (
-                  <div className="attr-pill age">
-                    <span className="attr-label">Age</span>
-                    <strong className="attr-val">{data.age} Years Old</strong>
-                  </div>
-                )}
-                {data.bloodType && (
-                  <div className="attr-pill blood">
-                    <span className="attr-label">Blood Type</span>
-                    <strong className="attr-val">{data.bloodType}</strong>
-                  </div>
-                )}
-                {data.gender && (
-                  <div className="attr-pill gender">
-                    <span className="attr-label">Gender</span>
-                    <strong className="attr-val">{data.gender}</strong>
-                  </div>
-                )}
-              </div>
+              {data && (
+                <div className="child-attributes-pills">
+                  {data.age && (
+                    <div className="attr-pill age">
+                      <span className="attr-label">Age</span>
+                      <strong className="attr-val">{data.age} Years Old</strong>
+                    </div>
+                  )}
+                  {data.bloodType && (
+                    <div className="attr-pill blood">
+                      <span className="attr-label">Blood Type</span>
+                      <strong className="attr-val">{data.bloodType}</strong>
+                    </div>
+                  )}
+                  {data.gender && (
+                    <div className="attr-pill gender">
+                      <span className="attr-label">Gender</span>
+                      <strong className="attr-val">{data.gender}</strong>
+                    </div>
+                  )}
+                </div>
+
+              )}
 
               {data.languages && (
                 <div className="spoken-language-row">
@@ -452,8 +440,8 @@ export default function PublicTagProfilePage() {
               </div>
 
               {primaryPhone ? (
-                <a 
-                  href={`tel:${primaryPhone.replace(/[^0-9+]/g, '')}`} 
+                <a
+                  href={`tel:${primaryPhone.replace(/[^0-9+]/g, '')}`}
                   className="hero-call-button"
                   id="btn-call-primary"
                 >
@@ -463,7 +451,7 @@ export default function PublicTagProfilePage() {
                   <div className="call-text-box">
                     <span className="call-title">CALL GUARDIAN NOW</span>
                     <span className="call-number">
-                      {primaryContact?.name || data.parentContact || 'Mother'} • {primaryPhone}
+                      {primaryContact?.name || data.parentContact || 'Mother'} ({primaryPhone})
                     </span>
                   </div>
                 </a>
@@ -477,17 +465,17 @@ export default function PublicTagProfilePage() {
               {/* Quick Messaging Actions (WhatsApp & SMS) */}
               {primaryPhone && (
                 <div className="quick-msg-grid">
-                  <a 
-                    href={whatsappUrl} 
-                    target="_blank" 
-                    rel="noreferrer" 
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
                     className="msg-btn whatsapp-btn"
                   >
                     <MessageSquare size={17} />
                     <span>WhatsApp</span>
                   </a>
-                  <a 
-                    href={smsUrl} 
+                  <a
+                    href={smsUrl}
                     className="msg-btn sms-btn"
                   >
                     <Phone size={17} />
@@ -499,8 +487,8 @@ export default function PublicTagProfilePage() {
 
             {/* SMART GPS PINPOINT DISPATCH */}
             <section className="gps-dispatch-section">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className={`btn-gps-trigger ${locationSent ? 'sent' : ''}`}
                 onClick={handleShareLocation}
                 disabled={sendingLocation}
@@ -546,18 +534,18 @@ export default function PublicTagProfilePage() {
                   </div>
 
                   <div className="gps-card-actions">
-                    <a 
-                      href={`https://www.google.com/maps?q=${currentLocation.lat},${currentLocation.lng}`} 
-                      target="_blank" 
-                      rel="noreferrer" 
+                    <a
+                      href={`https://www.google.com/maps?q=${currentLocation.lat},${currentLocation.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
                       className="btn-open-maps"
                     >
                       <ExternalLink size={14} />
                       <span>Open in Maps</span>
                     </a>
-                    <button 
-                      type="button" 
-                      className="btn-re-locate" 
+                    <button
+                      type="button"
+                      className="btn-re-locate"
                       onClick={handleShareLocation}
                     >
                       Update Pinpoint
@@ -629,8 +617,8 @@ export default function PublicTagProfilePage() {
                         </div>
                         <span className="contact-card-phone">{contact.phone}</span>
                       </div>
-                      <a 
-                        href={`tel:${contact.phone.replace(/[^0-9+]/g, '')}`} 
+                      <a
+                        href={`tel:${contact.phone.replace(/[^0-9+]/g, '')}`}
                         className="btn-contact-call"
                         title={`Call ${contact.name}`}
                       >
@@ -665,8 +653,8 @@ export default function PublicTagProfilePage() {
               </ol>
 
               {/* Direct Emergency 911 Trigger */}
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="btn-call-911-trigger"
                 onClick={() => setIsEmergencyModalOpen(true)}
               >
@@ -678,64 +666,16 @@ export default function PublicTagProfilePage() {
           </div>
         ) : null}
 
-        {/* STICKY BOTTOM EMERGENCY DOCK ON MOBILE */}
-        {data && primaryPhone && (
-          <aside className="sticky-bottom-action-dock" aria-label="Instant Emergency Call">
-            <div className="dock-child-info">
-              {data.imageUrl ? (
-                <img src={data.imageUrl} alt={data.childName} className="dock-thumb-img" />
-              ) : (
-                <div className="dock-thumb-fallback">👧</div>
-              )}
-              <div className="dock-title-group">
-                <strong className="dock-name">{data.childName}</strong>
-                <span className="dock-tag-status">Verified Active Tag</span>
-              </div>
-            </div>
-
-            <div className="dock-action-buttons">
-              <button 
-                type="button" 
-                className={`dock-gps-icon-btn ${locationSent ? 'sent' : ''}`}
-                onClick={handleShareLocation}
-                title="Send GPS Location"
-              >
-                {sendingLocation ? <Loader2 size={18} className="spin" /> : locationSent ? <CheckCircle2 size={18} /> : <MapPin size={18} />}
-              </button>
-              <a 
-                href={`tel:${primaryPhone.replace(/[^0-9+]/g, '')}`} 
-                className="dock-call-btn"
-                title="Call Guardian"
-              >
-                <PhoneCall size={18} />
-                <span>Call Guardian</span>
-              </a>
-            </div>
-          </aside>
-        )}
-
-        {/* FULLSCREEN PHOTO LIGHTBOX MODAL */}
-        {isPhotoModalOpen && data?.imageUrl && (
-          <div className="lightbox-backdrop" onClick={() => setIsPhotoModalOpen(false)}>
-            <div className="lightbox-container" onClick={(e) => e.stopPropagation()}>
-              <button 
-                type="button" 
-                className="lightbox-close-btn" 
-                onClick={() => setIsPhotoModalOpen(false)}
-                aria-label="Close photo"
-              >
-                <X size={22} />
-              </button>
-              <div className="lightbox-image-box">
-                <img src={data.imageUrl} alt={data.childName} />
-              </div>
-              <div className="lightbox-footer">
-                <h3>{data.childName}</h3>
-                <p>Child Identification Photo • Tag #{data.tagCode || tagCode}</p>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* PUBLIC TAG FOOTER */}
+        <footer className="public-tag-footer">
+          <Link to="/" className="footer-website-link">
+            <ShieldCheck size={15} />
+            <span>www.kidditag.com</span>
+          </Link>
+          <p className="footer-copyright">
+            © {new Date().getFullYear()} KiddiTag. All rights reserved.
+          </p>
+        </footer>
 
         {/* EMERGENCY 911 CONFIRMATION MODAL */}
         {isEmergencyModalOpen && (
@@ -749,15 +689,15 @@ export default function PublicTagProfilePage() {
                 Dial <strong>911 (or local dispatch)</strong> if the child is in immediate danger, requires urgent medical care, or if guardians do not answer after several calls.
               </p>
               <div className="dialog-buttons-row">
-                <button 
-                  type="button" 
-                  className="dialog-btn-cancel" 
+                <button
+                  type="button"
+                  className="dialog-btn-cancel"
                   onClick={() => setIsEmergencyModalOpen(false)}
                 >
                   Cancel
                 </button>
-                <a 
-                  href="tel:911" 
+                <a
+                  href="tel:911"
                   className="dialog-btn-call"
                   onClick={() => setIsEmergencyModalOpen(false)}
                 >
