@@ -48,17 +48,17 @@ const COMMON_CONDITIONS = [
 const BLOOD_TYPES = ['Not Specified', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
 const SEVERITY_LEVELS = [
-  { id: 'HIGH', label: 'Severe / Anaphylaxis Risk', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', icon: '🔴' },
-  { id: 'MODERATE', label: 'Moderate (Hives / Swelling)', color: '#d97706', bg: '#fffbeb', border: '#fde68a', icon: '🟡' },
-  { id: 'MILD', label: 'Mild / Dietary Sensitivity', color: '#059669', bg: '#f0fdf4', border: '#a7f3d0', icon: '🟢' },
+  { id: 'HIGH', label: 'Severe / Anaphylaxis Risk', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
+  { id: 'MODERATE', label: 'Moderate (Hives / Swelling)', color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+  { id: 'MILD', label: 'Mild / Dietary Sensitivity', color: '#059669', bg: '#f0fdf4', border: '#a7f3d0' },
 ];
 
 const QUICK_FIRST_AID_TEMPLATES = [
-  '⚡ Carry EpiPen Jr. in front backpack pocket',
-  '💨 Ventolin inhaler: 2 puffs if breathing is strained',
-  '🍬 Fast-acting glucose/juice for low blood sugar',
-  '🩺 Wears official MedicAlert identification bracelet',
-  '🚫 Non-verbal under extreme stress - please speak gently'
+  'Carry EpiPen Jr. in front backpack pocket',
+  'Ventolin inhaler: 2 puffs if breathing is strained',
+  'Fast-acting glucose/juice for low blood sugar',
+  'Wears official MedicAlert identification bracelet',
+  'Non-verbal under extreme stress - please speak gently'
 ];
 
 export default function MedicalPage() {
@@ -545,7 +545,7 @@ export default function MedicalPage() {
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      <span>{sev.icon}</span>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: sev.color, flexShrink: 0 }} />
                       <span>{sev.label}</span>
                     </button>
                   );
@@ -980,31 +980,62 @@ export default function MedicalPage() {
                 </div>
 
                 {/* Button to open live test scan */}
-                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
-                  <a
-                    href="/scan/KT-7842"
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      width: '100%',
-                      padding: '8px 12px',
-                      background: '#582be8',
-                      color: '#ffffff',
-                      borderRadius: '10px',
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      textDecoration: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  >
-                    <ExternalLink size={13} />
-                    <span>Open Live Finder Scan View</span>
-                  </a>
-                </div>
+                {(() => {
+                  const childTagCode = selectedChild?.tags && selectedChild.tags.length > 0
+                    ? selectedChild.tags[0].tagCode
+                    : null;
+                  return childTagCode ? (
+                    <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                      <a
+                        href={`/scan/${childTagCode}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          width: '100%',
+                          padding: '8px 12px',
+                          background: '#582be8',
+                          color: '#ffffff',
+                          borderRadius: '10px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        <ExternalLink size={13} />
+                        <span>Open Live Finder Scan View</span>
+                      </a>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                      <div
+                        title="No tag linked to this child yet"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          width: '100%',
+                          padding: '8px 12px',
+                          background: '#cbd5e1',
+                          color: '#64748b',
+                          borderRadius: '10px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          boxSizing: 'border-box',
+                          cursor: 'not-allowed'
+                        }}
+                      >
+                        <ExternalLink size={13} />
+                        <span>No Tag Linked Yet</span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
               </div>
             </div>
