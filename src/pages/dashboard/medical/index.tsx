@@ -11,7 +11,13 @@ import {
   Baby, 
   Plus, 
   Info,
-  PhoneCall
+  PhoneCall,
+  Sparkles,
+  Zap,
+  ExternalLink,
+  ShieldAlert,
+  Wifi,
+  Battery
 } from 'lucide-react';
 import { useChildren } from '../../../hooks/useChildren';
 import { useContacts } from '../../../hooks/useContacts';
@@ -41,6 +47,20 @@ const COMMON_CONDITIONS = [
 
 const BLOOD_TYPES = ['Not Specified', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
+const SEVERITY_LEVELS = [
+  { id: 'HIGH', label: 'Severe / Anaphylaxis Risk', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', icon: '🔴' },
+  { id: 'MODERATE', label: 'Moderate (Hives / Swelling)', color: '#d97706', bg: '#fffbeb', border: '#fde68a', icon: '🟡' },
+  { id: 'MILD', label: 'Mild / Dietary Sensitivity', color: '#059669', bg: '#f0fdf4', border: '#a7f3d0', icon: '🟢' },
+];
+
+const QUICK_FIRST_AID_TEMPLATES = [
+  '⚡ Carry EpiPen Jr. in front backpack pocket',
+  '💨 Ventolin inhaler: 2 puffs if breathing is strained',
+  '🍬 Fast-acting glucose/juice for low blood sugar',
+  '🩺 Wears official MedicAlert identification bracelet',
+  '🚫 Non-verbal under extreme stress - please speak gently'
+];
+
 export default function MedicalPage() {
   const { children, loading: childrenLoading, updateChild, createChild } = useChildren();
 
@@ -48,6 +68,7 @@ export default function MedicalPage() {
 
   // Form states
   const [bloodType, setBloodType] = useState('Not Specified');
+  const [allergySeverity, setAllergySeverity] = useState('HIGH');
   const [allergies, setAllergies] = useState('');
   const [conditions, setConditions] = useState('');
   const [emergencyInstructions, setEmergencyInstructions] = useState('');
@@ -60,24 +81,6 @@ export default function MedicalPage() {
   const [showAddChildModal, setShowAddChildModal] = useState(false);
   const [newChildName, setNewChildName] = useState('');
   const [isAddingChild, setIsAddingChild] = useState(false);
-
-  const handleCreateChild = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newChildName.trim()) return;
-    try {
-      setIsAddingChild(true);
-      const created = await createChild(newChildName.trim());
-      setNewChildName('');
-      setShowAddChildModal(false);
-      if (created?.id) {
-        setSelectedChildId(created.id);
-      }
-    } catch (err: any) {
-      alert(err.message || 'Failed to create child profile');
-    } finally {
-      setIsAddingChild(false);
-    }
-  };
 
   // Auto-select first child
   useEffect(() => {
@@ -92,7 +95,21 @@ export default function MedicalPage() {
   // Parse existing child data into structured fields
   useEffect(() => {
     if (selectedChild) {
-      setAllergies(selectedChild.allergies || '');
+      const rawAllergies = selectedChild.allergies || '';
+      
+      // Check if severity prefix was saved
+      if (rawAllergies.includes('[Critical: Anaphylaxis]')) {
+        setAllergySeverity('HIGH');
+        setAllergies(rawAllergies.replace('[Critical: Anaphylaxis]', '').trim());
+      } else if (rawAllergies.includes('[Moderate]')) {
+        setAllergySeverity('MODERATE');
+        setAllergies(rawAllergies.replace('[Moderate]', '').trim());
+      } else if (rawAllergies.includes('[Mild]')) {
+        setAllergySeverity('MILD');
+        setAllergies(rawAllergies.replace('[Mild]', '').trim());
+      } else {
+        setAllergies(rawAllergies);
+      }
 
       const rawMedical = selectedChild.medicalInfo || '';
       
@@ -134,6 +151,21 @@ export default function MedicalPage() {
     }
   }, [selectedChild]);
 
+  // Readiness Score Calculation
+  const hasBloodType = bloodType && bloodType !== 'Not Specified';
+  const hasAllergies = allergies.trim().length > 0;
+  const hasConditions = conditions.trim().length > 0;
+  const hasInstructions = emergencyInstructions.trim().length > 0;
+
+  const scoreItems = [
+    { label: 'Blood Type', ready: hasBloodType, weight: 25 },
+    { label: 'Allergies Info', ready: hasAllergies, weight: 25 },
+    { label: 'Conditions', ready: hasConditions, weight: 25 },
+    { label: 'First-Aid Action', ready: hasInstructions, weight: 25 }
+  ];
+  const readinessScore = scoreItems.reduce((acc, curr) => acc + (curr.ready ? curr.weight : 0), 0);
+  const missingItems = scoreItems.filter(i => !i.ready).map(i => i.label);
+
   // Add allergy tag preset
   const handleAddAllergyTag = (allergy: string) => {
     const list = allergies.split(',').map(s => s.trim()).filter(Boolean);
@@ -152,6 +184,13 @@ export default function MedicalPage() {
     }
   };
 
+  // Add Quick First Aid Template
+  const handleAddQuickTemplate = (template: string) => {
+    if (!emergencyInstructions.includes(template)) {
+      setEmergencyInstructions(prev => prev.trim() ? `${prev.trim()}\n${template}` : template);
+    }
+  };
+
   // Build compiled medicalInfo string
   const compileMedicalInfo = () => {
     const parts: string[] = [];
@@ -167,6 +206,13 @@ export default function MedicalPage() {
     return parts.join('\n');
   };
 
+  // Build compiled allergies string
+  const compileAllergies = () => {
+    if (!allergies.trim()) return '';
+    const prefix = allergySeverity === 'HIGH' ? '[Critical: Anaphylaxis] ' : allergySeverity === 'MODERATE' ? '[Moderate] ' : '[Mild] ';
+    return `${prefix}${allergies.trim()}`;
+  };
+
   // Save handler
   const handleSaveMedical = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,9 +224,10 @@ export default function MedicalPage() {
       setSaveSuccess(false);
 
       const compiledMedical = compileMedicalInfo();
+      const compiledAllergiesStr = compileAllergies();
 
       await updateChild(selectedChild.id, {
-        allergies: allergies.trim(),
+        allergies: compiledAllergiesStr,
         medicalInfo: compiledMedical
       });
 
@@ -190,6 +237,24 @@ export default function MedicalPage() {
       setSaveError(err.message || 'Failed to update medical details.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCreateChild = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newChildName.trim()) return;
+    try {
+      setIsAddingChild(true);
+      const created = await createChild(newChildName.trim());
+      setNewChildName('');
+      setShowAddChildModal(false);
+      if (created?.id) {
+        setSelectedChildId(created.id);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to create child profile');
+    } finally {
+      setIsAddingChild(false);
     }
   };
 
@@ -210,49 +275,88 @@ export default function MedicalPage() {
           <p style={{ color: '#6e6893', maxWidth: '440px', margin: '0 auto 20px', fontSize: '0.9rem' }}>
             Please add a child profile first in the Children tab before configuring medical and allergy emergency protocols.
           </p>
-          <a href="/dashboard/children" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <button 
+            type="button" 
+            onClick={() => setShowAddChildModal(true)} 
+            className="btn-primary" 
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
             <Plus size={16} />
             <span>Add Child Profile</span>
-          </a>
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="dash-view-container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Top Banner Notice */}
+    <div className="dash-view-container" style={{ maxWidth: '1240px', margin: '0 auto' }}>
+      
+      {/* Top Banner Notice with Readiness Progress */}
       <div style={{
-        background: 'linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%)',
-        border: '1px solid #fecdd3',
-        borderRadius: '16px',
-        padding: '16px 20px',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '14px',
-        marginBottom: '24px'
+        background: 'linear-gradient(135deg, #ffffff 0%, #faf8ff 100%)',
+        border: '1px solid #e7e2f5',
+        borderRadius: '20px',
+        padding: '20px 24px',
+        marginBottom: '24px',
+        boxShadow: '0 4px 20px rgba(88, 43, 232, 0.05)'
       }}>
-        <div style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '10px',
-          background: '#fee2e2',
-          color: '#e11d48',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}>
-          <AlertTriangle size={20} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#9f1239', margin: 0, marginBottom: '4px' }}>
-            Emergency Life-Saving Protocol
-          </h3>
-          <p style={{ fontSize: '0.84rem', color: '#be123c', margin: 0, lineHeight: 1.5 }}>
-            The information you provide here is displayed immediately to anyone who scans your child's KiddiTag wristband or tag. 
-            Ensure allergy triggers, medications (e.g. EpiPen locations), and chronic health conditions are clear and up to date.
-          </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '12px',
+              background: readinessScore === 100 ? '#ecfdf5' : '#ede9fe',
+              color: readinessScore === 100 ? '#059669' : '#582be8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              {readinessScore === 100 ? <ShieldCheck size={24} /> : <ShieldAlert size={24} />}
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1a1438', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>Emergency Health & Safety Protocol</span>
+                {readinessScore === 100 && (
+                  <span style={{ fontSize: '0.72rem', background: '#dcfce7', color: '#15803d', fontWeight: 800, padding: '2px 8px', borderRadius: '12px' }}>
+                    100% READY
+                  </span>
+                )}
+              </h3>
+              <p style={{ fontSize: '0.84rem', color: '#6e6893', margin: '3px 0 0', lineHeight: 1.4 }}>
+                Instant medical telemetry broadcasted to first responders and finders during a smart tag scan.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: readinessScore === 100 ? '#059669' : '#582be8' }}>
+              Safety Readiness: {readinessScore}%
+            </span>
+            <div style={{
+              width: '180px',
+              height: '8px',
+              background: '#e2e8f0',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              marginTop: '6px'
+            }}>
+              <div style={{
+                width: `${readinessScore}%`,
+                height: '100%',
+                background: readinessScore === 100 ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #7c3aed, #582be8)',
+                borderRadius: '10px',
+                transition: 'width 0.4s ease'
+              }} />
+            </div>
+            {missingItems.length > 0 && (
+              <span style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>
+                Remaining: {missingItems.join(', ')}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -335,24 +439,25 @@ export default function MedicalPage() {
       </div>
 
       {/* Main Grid: Form (Left) & Real-Time Preview (Right) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px' }}>
+        
         {/* Medical Form */}
-        <div className="dash-card" style={{ background: '#ffffff', borderRadius: '16px', padding: '24px', border: '1px solid #e9e8f2' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+        <div className="dash-card" style={{ background: '#ffffff', borderRadius: '20px', padding: '26px', border: '1px solid #e9e8f2', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' }}>
             <div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#1a1438', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1a1438', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Activity size={20} style={{ color: '#582be8' }} />
-                <span>{selectedChild?.name}'s Medical File</span>
+                <span>{selectedChild?.name}'s Health File</span>
               </h2>
               <p style={{ fontSize: '0.82rem', color: '#6e6893', margin: '4px 0 0' }}>
-                Updates save directly to PostgreSQL database & sync to public tag scans.
+                Changes save securely to cloud database and sync immediately to QR & NFC tag scans.
               </p>
             </div>
             <span style={{
               background: '#f0fdf4',
               color: '#15803d',
               border: '1px solid #bbf7d0',
-              padding: '4px 10px',
+              padding: '5px 12px',
               borderRadius: '20px',
               fontSize: '0.75rem',
               fontWeight: 700,
@@ -360,17 +465,22 @@ export default function MedicalPage() {
               alignItems: 'center',
               gap: '4px'
             }}>
-              <ShieldCheck size={12} />
-              <span>Active</span>
+              <ShieldCheck size={13} />
+              <span>Verified Protected</span>
             </span>
           </div>
 
           <form onSubmit={handleSaveMedical}>
+            
             {/* Blood Type Selection */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: '#1a1438', marginBottom: '8px' }}>
-                Blood Type
-              </label>
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <label style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1a1438' }}>
+                  Blood Type
+                </label>
+                <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>Vital for emergency transfusion</span>
+              </div>
+              
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                 {BLOOD_TYPES.map(type => {
                   const isChecked = bloodType === type;
@@ -381,12 +491,12 @@ export default function MedicalPage() {
                       onClick={() => setBloodType(type)}
                       style={{
                         padding: type === 'Not Specified' ? '6px 12px' : '6px 10px',
-                        minWidth: type === 'Not Specified' ? 'auto' : '42px',
+                        minWidth: type === 'Not Specified' ? 'auto' : '44px',
                         borderRadius: '8px',
                         border: isChecked ? '1.5px solid #e11d48' : '1px solid #e2e8f0',
                         background: isChecked ? '#fff1f2' : '#f8fafc',
                         color: isChecked ? '#be123c' : '#475569',
-                        fontWeight: isChecked ? 700 : 600,
+                        fontWeight: isChecked ? 800 : 600,
                         fontSize: '0.82rem',
                         cursor: 'pointer',
                         textAlign: 'center',
@@ -400,14 +510,47 @@ export default function MedicalPage() {
               </div>
             </div>
 
-            {/* Known Allergies */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: '#1a1438', marginBottom: '4px' }}>
-                Known Allergies & Triggers
-              </label>
-              <p style={{ fontSize: '0.78rem', color: '#6e6893', margin: '0 0 8px' }}>
-                Click common tags or type custom allergies below (separated by comma):
-              </p>
+            {/* Known Allergies & Severity Level */}
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1a1438' }}>
+                  Known Allergies & Triggers
+                </label>
+                <span style={{ fontSize: '0.74rem', color: '#c2410c', fontWeight: 600 }}>Click tags to add quickly</span>
+              </div>
+
+              {/* Allergy Severity Selector */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                {SEVERITY_LEVELS.map(sev => {
+                  const isSelected = allergySeverity === sev.id;
+                  return (
+                    <button
+                      key={sev.id}
+                      type="button"
+                      onClick={() => setAllergySeverity(sev.id)}
+                      style={{
+                        flex: 1,
+                        padding: '6px 8px',
+                        borderRadius: '8px',
+                        border: `1.5px solid ${isSelected ? sev.color : '#e2e8f0'}`,
+                        background: isSelected ? sev.bg : '#ffffff',
+                        color: isSelected ? sev.color : '#64748b',
+                        fontSize: '0.72rem',
+                        fontWeight: isSelected ? 800 : 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>{sev.icon}</span>
+                      <span>{sev.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
               
               {/* Preset Allergy Tags */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
@@ -421,16 +564,17 @@ export default function MedicalPage() {
                       border: '1px solid #fed7aa',
                       color: '#c2410c',
                       borderRadius: '6px',
-                      padding: '3px 8px',
+                      padding: '4px 9px',
                       fontSize: '0.74rem',
                       fontWeight: 600,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '3px'
+                      gap: '4px',
+                      transition: 'all 0.1s ease'
                     }}
                   >
-                    <Plus size={10} />
+                    <Plus size={11} />
                     <span>{allergy}</span>
                   </button>
                 ))}
@@ -440,10 +584,10 @@ export default function MedicalPage() {
                 type="text"
                 value={allergies}
                 onChange={(e) => setAllergies(e.target.value)}
-                placeholder="e.g. Severe Peanuts, Penicillin, Bee stings"
+                placeholder="e.g. Severe Peanuts, Tree Nuts, Bee stings"
                 style={{
                   width: '100%',
-                  padding: '10px 14px',
+                  padding: '11px 14px',
                   borderRadius: '10px',
                   border: '1.5px solid #e2e8f0',
                   fontSize: '0.88rem',
@@ -455,13 +599,13 @@ export default function MedicalPage() {
             </div>
 
             {/* Chronic Medical Conditions */}
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: '#1a1438', marginBottom: '4px' }}>
-                Chronic Medical Conditions
-              </label>
-              <p style={{ fontSize: '0.78rem', color: '#6e6893', margin: '0 0 8px' }}>
-                Add known medical diagnoses:
-              </p>
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1a1438' }}>
+                  Chronic Medical Diagnoses
+                </label>
+                <span style={{ fontSize: '0.74rem', color: '#1d4ed8', fontWeight: 600 }}>Click diagnosis tags</span>
+              </div>
               
               {/* Preset Conditions Tags */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
@@ -475,16 +619,16 @@ export default function MedicalPage() {
                       border: '1px solid #bfdbfe',
                       color: '#1d4ed8',
                       borderRadius: '6px',
-                      padding: '3px 8px',
+                      padding: '4px 9px',
                       fontSize: '0.74rem',
                       fontWeight: 600,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '3px'
+                      gap: '4px'
                     }}
                   >
-                    <Plus size={10} />
+                    <Plus size={11} />
                     <span>{cond}</span>
                   </button>
                 ))}
@@ -497,7 +641,7 @@ export default function MedicalPage() {
                 placeholder="e.g. Asthma, Type 1 Diabetes"
                 style={{
                   width: '100%',
-                  padding: '10px 14px',
+                  padding: '11px 14px',
                   borderRadius: '10px',
                   border: '1.5px solid #e2e8f0',
                   fontSize: '0.88rem',
@@ -508,19 +652,49 @@ export default function MedicalPage() {
               />
             </div>
 
-            {/* Emergency Action & Medication Instructions */}
+            {/* Emergency Action & Medication Instructions with Quick Chips */}
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', fontSize: '0.84rem', fontWeight: 600, color: '#1a1438', marginBottom: '4px' }}>
-                Emergency Medication & First-Aid Instructions
-              </label>
-              <p style={{ fontSize: '0.78rem', color: '#6e6893', margin: '0 0 8px' }}>
-                Specific steps for first responders (e.g. medication location, inhaler instructions, dosage):
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1a1438' }}>
+                  Emergency Action & Medication Instructions
+                </label>
+                <span style={{ fontSize: '0.74rem', color: '#7c3aed', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <Sparkles size={12} />
+                  <span>Quick Templates</span>
+                </span>
+              </div>
+
+              {/* Quick Template Chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                {QUICK_FIRST_AID_TEMPLATES.map(tpl => (
+                  <button
+                    key={tpl}
+                    type="button"
+                    onClick={() => handleAddQuickTemplate(tpl)}
+                    style={{
+                      background: '#faf5ff',
+                      border: '1px solid #e9d5ff',
+                      color: '#6b21a8',
+                      borderRadius: '6px',
+                      padding: '4px 9px',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <span>{tpl}</span>
+                  </button>
+                ))}
+              </div>
+
               <textarea
                 value={emergencyInstructions}
                 onChange={(e) => setEmergencyInstructions(e.target.value)}
                 rows={4}
-                placeholder="e.g. Ventolin inhaler is inside the front zipper pocket of his school backpack. Administer 2 puffs immediately if breathing becomes wheezy."
+                placeholder="Specific instructions for first responders (e.g. location of inhaler/EpiPen in backpack, specific doses, pediatrician info)..."
                 style={{
                   width: '100%',
                   padding: '12px 14px',
@@ -541,16 +715,17 @@ export default function MedicalPage() {
                 background: '#f0fdf4',
                 color: '#15803d',
                 border: '1px solid #bbf7d0',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '0.84rem',
+                padding: '12px 16px',
+                borderRadius: '10px',
+                fontSize: '0.86rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                marginBottom: '16px'
+                gap: '10px',
+                marginBottom: '18px',
+                animation: 'fadeIn 0.2s ease'
               }}>
-                <CheckCircle2 size={16} />
-                <span>Medical protocol updated securely in the database and synced to tag scans!</span>
+                <CheckCircle2 size={18} />
+                <span>Medical protocol saved successfully to PostgreSQL database and synced to tag scans!</span>
               </div>
             )}
 
@@ -559,24 +734,24 @@ export default function MedicalPage() {
                 background: '#fef2f2',
                 color: '#b91c1c',
                 border: '1px solid #fecaca',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                fontSize: '0.84rem',
+                padding: '12px 16px',
+                borderRadius: '10px',
+                fontSize: '0.86rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                marginBottom: '16px'
+                gap: '10px',
+                marginBottom: '18px'
               }}>
-                <AlertTriangle size={16} />
+                <AlertTriangle size={18} />
                 <span>{saveError}</span>
               </div>
             )}
 
             {/* Submit Button */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '10px', borderTop: '1px solid #f1f0f7' }}>
-              <span style={{ fontSize: '0.8rem', color: '#8d89a5', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '12px', borderTop: '1px solid #f1f0f7' }}>
+              <span style={{ fontSize: '0.8rem', color: '#8d89a5', display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <Info size={14} />
-                <span>Encrypted on cloud storage</span>
+                <span>Encrypted AES-256 cloud record</span>
               </span>
               <button
                 type="submit"
@@ -586,16 +761,17 @@ export default function MedicalPage() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  padding: '10px 22px',
-                  borderRadius: '10px',
-                  fontWeight: 600,
-                  fontSize: '0.9rem'
+                  padding: '11px 24px',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  boxShadow: '0 4px 14px rgba(88, 43, 232, 0.25)'
                 }}
               >
                 {isSaving ? (
                   <>
                     <Loader2 size={16} className="spin" />
-                    <span>Saving to Database...</span>
+                    <span>Updating Cloud Record...</span>
                   </>
                 ) : (
                   <>
@@ -608,180 +784,235 @@ export default function MedicalPage() {
           </form>
         </div>
 
-        {/* Live Public Scan Simulation Preview (Right Column) */}
+        {/* Ultra-Realistic Mobile Device Frame (Right Column) */}
         <div>
           <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            padding: '24px',
-            border: '1px solid #e9e8f2',
             position: 'sticky',
             top: '24px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Eye size={18} style={{ color: '#582be8' }} />
-                <h3 style={{ fontSize: '0.96rem', fontWeight: 700, color: '#1a1438', margin: 0 }}>
-                  Live Finder Emergency Preview
-                </h3>
-              </div>
-              <span style={{ fontSize: '0.72rem', background: '#f5f3fc', color: '#582be8', fontWeight: 700, padding: '3px 8px', borderRadius: '12px' }}>
-                /scan/KID-***
-              </span>
-            </div>
-
-            <p style={{ fontSize: '0.8rem', color: '#6e6893', margin: '0 0 16px' }}>
-              Here is how first responders and finders will see {selectedChild?.name}'s medical warning card upon scanning:
-            </p>
-
-            {/* Mobile Card Mockup */}
             <div style={{
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '16px',
-              padding: '18px',
-              boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.03)'
+              background: '#0f172a',
+              borderRadius: '36px',
+              padding: '12px',
+              boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255,255,255,0.1)'
             }}>
-              {/* Header inside preview */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                {selectedChild?.photoUrl ? (
-                  <img 
-                    src={selectedChild.photoUrl} 
-                    alt={selectedChild.name} 
-                    style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover' }} 
-                  />
-                ) : (
-                  <div style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '50%',
-                    background: '#ede9fe',
-                    color: '#582be8',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: '1rem'
-                  }}>
-                    {selectedChild?.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>{selectedChild?.name}</div>
-                  <div style={{ fontSize: '0.74rem', color: '#64748b' }}>Active Safety Tag Attached</div>
-                </div>
-              </div>
-
-              {/* Emergency Card in Preview */}
+              {/* Phone Inner Screen */}
               <div style={{
                 background: '#ffffff',
-                border: '1.5px solid #fee2e2',
-                borderRadius: '12px',
-                padding: '14px',
-                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.05)'
+                borderRadius: '28px',
+                padding: '18px 16px',
+                overflow: 'hidden'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', fontWeight: 700, fontSize: '0.86rem', marginBottom: '12px' }}>
-                  <Heart size={16} style={{ color: '#ef4444' }} />
-                  <span>Important Medical Details</span>
+                
+                {/* iPhone Status Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', fontSize: '0.72rem', color: '#0f172a', fontWeight: 700, padding: '0 4px' }}>
+                  <span>9:41</span>
+                  {/* Dynamic Island Pill */}
+                  <div style={{ width: '64px', height: '14px', background: '#000000', borderRadius: '10px' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Wifi size={12} />
+                    <Battery size={13} />
+                  </div>
                 </div>
 
-                {/* Blood Type Badge */}
-                {bloodType && bloodType !== 'Not Specified' && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
-                    <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500 }}>Blood Type</span>
-                    <span style={{
-                      background: '#fee2e2',
-                      color: '#991b1b',
+                {/* Finder Header inside preview */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '0.68rem', background: '#fee2e2', color: '#dc2626', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Zap size={10} />
+                    <span>EMERGENCY TAG SCAN</span>
+                  </span>
+                  <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>
+                    /scan/KID-***
+                  </span>
+                </div>
+
+                {/* Child Mini Card */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', padding: '10px', background: '#f8fafc', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+                  {selectedChild?.photoUrl ? (
+                    <img 
+                      src={selectedChild.photoUrl} 
+                      alt={selectedChild.name} 
+                      style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} 
+                    />
+                  ) : (
+                    <div style={{
+                      width: '44px',
+                      height: '44px',
+                      borderRadius: '50%',
+                      background: '#ede9fe',
+                      color: '#582be8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       fontWeight: 800,
-                      fontSize: '0.78rem',
-                      padding: '2px 8px',
-                      borderRadius: '6px'
+                      fontSize: '1.1rem'
                     }}>
-                      {bloodType}
-                    </span>
-                  </div>
-                )}
-
-                {/* Allergies in preview */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500 }}>Allergies</span>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: allergies ? '#dc2626' : '#94a3b8',
-                    textAlign: 'right',
-                    maxWidth: '180px'
-                  }}>
-                    {allergies || 'None reported'}
-                  </span>
-                </div>
-
-                {/* Chronic Conditions */}
-                {conditions && (
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                    <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500 }}>Conditions</span>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af', textAlign: 'right', maxWidth: '180px' }}>
-                      {conditions}
-                    </span>
-                  </div>
-                )}
-
-                {/* Instructions in preview */}
-                <div style={{ paddingTop: '8px' }}>
-                  <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-                    First-Aid & Action Notes:
-                  </span>
-                  <div style={{
-                    fontSize: '0.78rem',
-                    color: emergencyInstructions ? '#334155' : '#94a3b8',
-                    background: '#f8fafc',
-                    padding: '8px 10px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    lineHeight: 1.4,
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {emergencyInstructions || 'No additional medication or instructions specified.'}
+                      {selectedChild?.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#0f172a' }}>{selectedChild?.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />
+                      <span>Smart Safety Wristband Active</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Contacts preview snippet */}
-              <div style={{ marginTop: '12px' }}>
-                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  Emergency Call Buttons Available to Finder:
-                </span>
-                {contacts.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {contacts.slice(0, 2).map(c => (
-                      <div key={c.id} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 10px',
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        fontSize: '0.76rem'
+                {/* Medical Details Card in Mobile View */}
+                <div style={{
+                  background: '#ffffff',
+                  border: '1.5px solid #fee2e2',
+                  borderRadius: '14px',
+                  padding: '14px',
+                  boxShadow: '0 2px 10px rgba(239, 68, 68, 0.06)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', fontWeight: 800, fontSize: '0.84rem' }}>
+                      <Heart size={15} style={{ color: '#ef4444' }} />
+                      <span>Critical Medical Protocol</span>
+                    </div>
+                    {bloodType && bloodType !== 'Not Specified' && (
+                      <span style={{
+                        background: '#dc2626',
+                        color: '#ffffff',
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        boxShadow: '0 2px 6px rgba(220, 38, 38, 0.25)'
                       }}>
-                        <span style={{ fontWeight: 600, color: '#1e293b' }}>{c.name} ({c.relationship})</span>
-                        <span style={{ color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <PhoneCall size={12} />
-                          <span>Call</span>
-                        </span>
-                      </div>
-                    ))}
+                        {bloodType}
+                      </span>
+                    )}
                   </div>
-                ) : (
-                  <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                    No contacts linked yet.
+
+                  {/* Allergies Highlight */}
+                  <div style={{ padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
+                      <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>Known Allergies:</span>
+                      <span style={{
+                        fontSize: '0.68rem',
+                        fontWeight: 800,
+                        color: allergySeverity === 'HIGH' ? '#dc2626' : allergySeverity === 'MODERATE' ? '#d97706' : '#059669',
+                        background: allergySeverity === 'HIGH' ? '#fef2f2' : allergySeverity === 'MODERATE' ? '#fffbeb' : '#f0fdf4',
+                        padding: '1px 6px',
+                        borderRadius: '4px'
+                      }}>
+                        {allergySeverity === 'HIGH' ? 'Critical' : allergySeverity === 'MODERATE' ? 'Moderate' : 'Mild'}
+                      </span>
+                    </div>
+                    <span style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 700,
+                      color: allergies ? '#dc2626' : '#94a3b8',
+                      display: 'block'
+                    }}>
+                      {allergies || 'None reported'}
+                    </span>
                   </div>
-                )}
+
+                  {/* Conditions */}
+                  {conditions && (
+                    <div style={{ padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '2px' }}>
+                        Diagnosed Conditions:
+                      </span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e40af' }}>
+                        {conditions}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* First Aid Instructions */}
+                  <div style={{ paddingTop: '8px' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                      First-Aid & Action Instructions:
+                    </span>
+                    <div style={{
+                      fontSize: '0.76rem',
+                      color: emergencyInstructions ? '#1e293b' : '#94a3b8',
+                      background: '#f8fafc',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      lineHeight: 1.45,
+                      whiteSpace: 'pre-wrap',
+                      maxHeight: '90px',
+                      overflowY: 'auto'
+                    }}>
+                      {emergencyInstructions || 'No emergency instructions provided.'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Emergency Calling Section */}
+                <div style={{ marginTop: '12px' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                    One-Tap Emergency Calling Available:
+                  </span>
+                  {contacts.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {contacts.slice(0, 2).map(c => (
+                        <div key={c.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '7px 10px',
+                          background: '#f0fdf4',
+                          border: '1px solid #bbf7d0',
+                          borderRadius: '8px',
+                          fontSize: '0.76rem'
+                        }}>
+                          <span style={{ fontWeight: 700, color: '#14532d' }}>{c.name} ({c.relationship})</span>
+                          <span style={{ color: '#059669', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <PhoneCall size={12} />
+                            <span>Direct Call</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', padding: '4px 0' }}>
+                      No emergency contacts linked.
+                    </div>
+                  )}
+                </div>
+
+                {/* Button to open live test scan */}
+                <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                  <a
+                    href="/scan/KT-7842"
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      width: '100%',
+                      padding: '8px 12px',
+                      background: '#582be8',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    <ExternalLink size={13} />
+                    <span>Open Live Finder Scan View</span>
+                  </a>
+                </div>
+
               </div>
             </div>
           </div>
         </div>
+
       </div>
+
       {/* Modal for adding child directly from Medical page */}
       {showAddChildModal && (
         <div 
