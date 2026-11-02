@@ -48,6 +48,7 @@ export default function App() {
         {/* Public Child Tag Emergency Profile (NFC / QR Scan) */}
         <Route path="/scan/:tagCode" element={<PublicTagProfilePage />} />
         <Route path="/tag/:tagCode" element={<PublicTagProfilePage />} />
+        <Route path="/t/:tagCode" element={<PublicTagProfilePage />} />
 
         {/* Public Website Pages with Common WebsiteLayout */}
         <Route element={<WebsiteLayout onOpenActivation={handleOpenActivation} />}>
