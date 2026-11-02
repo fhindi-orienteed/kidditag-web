@@ -46,7 +46,7 @@ export default function DashboardLayout({ onOpenActivation }: DashboardLayoutPro
   const navItems = [
     { id: 'overview', path: '/dashboard', label: 'Overview', icon: LayoutDashboard },
     { id: 'tags', path: '/dashboard/tags', label: 'Smart Tags', icon: Tag, count: currentChild.tags.length },
-    { id: 'children', path: '/dashboard/children', label: 'Children Profiles', icon: Users, count: 2 },
+    { id: 'children', path: '/dashboard/children', label: 'Children Profiles', icon: Users, count: children.length > 0 ? children.length : undefined },
     { id: 'map', path: '/dashboard/map', label: 'Live Scan Map', icon: MapPin, badge: 'Live' },
     { id: 'contacts', path: '/dashboard/contacts', label: 'Emergency Contacts', icon: PhoneCall },
     { id: 'medical', path: '/dashboard/medical', label: 'Medical & Allergy', icon: HeartPulse },

@@ -126,10 +126,10 @@ export default function ChildrenPage({ onOpenActivation }: ChildrenPageProps) {
         </div>
         <button 
           className="btn-primary" 
-          onClick={() => (onOpenActivation ? onOpenActivation() : setShowAddModal(true))}
+          onClick={() => setShowAddModal(true)}
         >
           <Plus size={16} />
-          <span>Add Child</span>
+          <span>Add Child Profile</span>
         </button>
       </div>
 
