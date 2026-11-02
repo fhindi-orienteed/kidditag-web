@@ -46,6 +46,7 @@ const COMMON_CONDITIONS = [
 ];
 
 const BLOOD_TYPES = ['Not Specified', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const LANGUAGE_PRESETS = ['Arabic & English', 'Arabic Only', 'English Only', 'Arabic, English & French', 'Spanish & English', 'Non-verbal / Sign Language'];
 
 const SEVERITY_LEVELS = [
   { id: 'HIGH', label: 'Severe / Anaphylaxis Risk', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
@@ -68,6 +69,7 @@ export default function MedicalPage() {
 
   // Form states
   const [bloodType, setBloodType] = useState('Not Specified');
+  const [languages, setLanguages] = useState('Arabic & English');
   const [allergySeverity, setAllergySeverity] = useState('HIGH');
   const [allergies, setAllergies] = useState('');
   const [conditions, setConditions] = useState('');
@@ -134,10 +136,19 @@ export default function MedicalPage() {
         setConditions('');
       }
 
+      // Try to extract Languages if formatted
+      const langMatch = rawMedical.match(/Languages?:\s*([^\n\r]+)/i);
+      if (langMatch) {
+        setLanguages(langMatch[1].trim());
+      } else {
+        setLanguages('Arabic & English');
+      }
+
       // Remaining text is instructions
       let cleanInstructions = rawMedical
         .replace(/Blood Type:?\s*(AB[+-]|[ABO][+-])[,;\s]*/i, '')
         .replace(/Conditions:\s*[^\n\r]+[\n\r]*/i, '')
+        .replace(/Languages?:\s*[^\n\r]+[\n\r]*/i, '')
         .trim();
 
       // If nothing extracted but rawMedical exists, put it all into instructions
@@ -153,6 +164,7 @@ export default function MedicalPage() {
 
   // Readiness Score Calculation
   const hasBloodType = bloodType && bloodType !== 'Not Specified';
+  const hasLanguages = Boolean(languages && languages.trim());
   const hasAllergies = allergies.trim().length > 0;
   const hasConditions = conditions.trim().length > 0;
   const hasInstructions = emergencyInstructions.trim().length > 0;
@@ -199,6 +211,9 @@ export default function MedicalPage() {
     }
     if (conditions.trim()) {
       parts.push(`Conditions: ${conditions.trim()}`);
+    }
+    if (languages.trim()) {
+      parts.push(`Languages: ${languages.trim()}`);
     }
     if (emergencyInstructions.trim()) {
       parts.push(emergencyInstructions.trim());
@@ -508,6 +523,58 @@ export default function MedicalPage() {
                   );
                 })}
               </div>
+            </div>
+
+            {/* Spoken Languages Section */}
+            <div style={{ marginBottom: '22px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <label style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1a1438' }}>
+                  Spoken Languages
+                </label>
+                <span style={{ fontSize: '0.74rem', color: '#6366f1', fontWeight: 600 }}>Emergency Communication</span>
+              </div>
+              
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+                {LANGUAGE_PRESETS.map(preset => {
+                  const isChecked = languages.toLowerCase() === preset.toLowerCase();
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setLanguages(preset)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: isChecked ? '1.5px solid #582be8' : '1px solid #e2e8f0',
+                        background: isChecked ? '#f4f0ff' : '#f8fafc',
+                        color: isChecked ? '#582be8' : '#475569',
+                        fontWeight: isChecked ? 800 : 600,
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <input
+                type="text"
+                value={languages}
+                onChange={(e) => setLanguages(e.target.value)}
+                placeholder="e.g. Arabic & English, German, Non-verbal"
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.86rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
             </div>
 
             {/* Known Allergies & Severity Level */}
@@ -856,6 +923,23 @@ export default function MedicalPage() {
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16a34a' }} />
                       <span>Smart Safety Wristband Active</span>
                     </div>
+                    {languages && (
+                      <div style={{
+                        marginTop: '4px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: '#f4f0ff',
+                        color: '#582be8',
+                        padding: '2px 7px',
+                        borderRadius: '6px',
+                        fontSize: '0.68rem',
+                        fontWeight: 700
+                      }}>
+                        <span>Speaks:</span>
+                        <span>{languages}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
