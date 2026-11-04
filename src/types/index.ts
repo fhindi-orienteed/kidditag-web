@@ -59,6 +59,8 @@ export interface User {
   email?: string;
   name?: string;
   role?: string;
+  phoneNumber?: string;
+  isTwoFactorEnabled?: boolean;
   accountId?: number;
   account_id?: number;
 }
