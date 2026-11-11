@@ -51,6 +51,7 @@ export interface TagScanResponse {
   tagType?: string;
   status?: string;
   location?: string;
+  emergencyContacts?: any[];
 }
 
 interface LocationDetails {
@@ -246,6 +247,19 @@ export default function PublicTagProfilePage() {
           timestamp: timeStr,
           accuracy: Math.round(accuracy)
         });
+
+        // Log real scan incident to backend database
+        try {
+          await api.post('/tags/scan-location', {
+            tagCode: tagCode || data?.tagCode,
+            latitude,
+            longitude,
+            locationName: cleanCity,
+            accuracy: position.coords?.accuracy || 10
+          });
+        } catch (postErr) {
+          console.warn('Scan location logging:', postErr);
+        }
 
         setTimeout(() => {
           setSendingLocation(false);
@@ -444,6 +458,7 @@ export default function PublicTagProfilePage() {
                   href={`tel:${primaryPhone.replace(/[^0-9+]/g, '')}`}
                   className="hero-call-button"
                   id="btn-call-primary"
+
                 >
                   <div className="call-bubble-icon">
                     <PhoneCall size={26} />

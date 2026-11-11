@@ -1,4 +1,3 @@
-
 export interface Account {
     id: number;
     name: string | null;
@@ -19,7 +18,9 @@ export interface User {
     name: string | null;
     userName: string;
     email: string | null;
+    phoneNumber?: string | null;
     role: string;
     isVerified: boolean;
+    isTwoFactorEnabled?: boolean;
     createdAt: string;
 }
